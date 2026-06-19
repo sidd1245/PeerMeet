@@ -1,0 +1,36 @@
+.modal {
+    border: 0;
+    border-radius: var(--radius-lg);
+    padding: 0;
+    background: transparent;
+    color: var(--text);
+}
+
+.modal::backdrop {
+    background: rgba(0, 0, 0, 0.58);
+}
+
+.modal-card {
+    min-width: min(420px, calc(100vw - 32px));
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 20px;
+    background: var(--surface);
+    box-shadow: var(--shadow-lg);
+}
+
+.modal-header h2 {
+    font-size: 18px;
+}
+
+.modal-body {
+    margin-top: 12px;
+    color: var(--text-2);
+    line-height: 1.6;
+}
+
+.modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 20px;
+}

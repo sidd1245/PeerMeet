@@ -1,5 +1,5 @@
 {
-  "name": "pzoom-server",
+  "name": "peermeet-server",
   "version": "1.0.0",
   "type": "module",
   "main": "server.js",

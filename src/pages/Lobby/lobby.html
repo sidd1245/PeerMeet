@@ -1,0 +1,84 @@
+<section
+        id="lobbyPage"
+        class="lobby-page"
+>
+    <header class="lobby-header">
+        <div class="brand-mark">
+            <span class="brand-icon">P</span>
+            <div>
+                    <h1>PeerMeet</h1>
+                <p>Secure video meetings with chat, screen sharing, and host controls.</p>
+            </div>
+        </div>
+        <div
+                id="appStatus"
+                class="status-pill"
+                data-state="connecting"
+        >
+            Connecting
+        </div>
+    </header>
+
+    <main class="lobby-layout">
+        <section class="lobby-intro">
+            <p class="eyebrow">Video meetings</p>
+            <h2>Connect with your team, instantly.</h2>
+            <p>
+                Start or join a secure meeting with HD video, real-time chat,
+                screen sharing, participant visibility, and host controls.
+            </p>
+            <div class="feature-strip">
+                <span>HD video</span>
+                <span>Realtime chat</span>
+                <span>Screen sharing</span>
+                <span>Host controls</span>
+            </div>
+        </section>
+
+        <section
+                class="lobby-card"
+                aria-label="Meeting setup"
+        >
+            <div class="field-group">
+                <label for="userNameInput">Your name</label>
+                <input
+                        id="userNameInput"
+                        class="text-input"
+                        autocomplete="name"
+                        placeholder="Enter your name"
+                >
+            </div>
+
+            <button
+                    id="createRoomBtn"
+                    class="btn btn-primary btn-full"
+            >
+                <span class="btn-icon">+</span>
+                Create meeting
+            </button>
+
+            <div class="divider">
+                <span>or join with a code</span>
+            </div>
+
+            <div class="join-row">
+                <div class="field-group">
+                    <label for="roomInput">Meeting code</label>
+                    <input
+                            id="roomInput"
+                            class="text-input"
+                            placeholder="Enter a code"
+                    >
+                </div>
+                <button
+                        id="joinRoomBtn"
+                        class="btn btn-secondary"
+                >
+                    Join
+                </button>
+            </div>
+
+            <div id="meetingInfoMount"></div>
+        </section>
+    </main>
+</section>

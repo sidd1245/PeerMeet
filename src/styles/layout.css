@@ -1,0 +1,33 @@
+.panel-view {
+    display: none;
+    min-height: 0;
+}
+
+.panel-view.is-active {
+    display: grid;
+    grid-template-rows: auto 1fr auto;
+}
+
+.panel-heading {
+    border-bottom: 1px solid var(--border);
+    padding: 13px 16px 9px;
+}
+
+.panel-heading h3 {
+    color: var(--text-2);
+    font-size: 13px;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+
+.empty-state,
+.chat-empty {
+    display: grid;
+    place-items: center;
+    min-height: 150px;
+    padding: 20px;
+    color: var(--text-3);
+    font-size: 13px;
+    text-align: center;
+}

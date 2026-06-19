@@ -1,0 +1,48 @@
+.chat-messages {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-height: 0;
+    overflow-y: auto;
+    padding: 14px 16px;
+}
+
+.chat-message {
+    display: grid;
+    gap: 4px;
+    max-width: 86%;
+    border-radius: 12px;
+    padding: 9px 11px;
+    background: var(--surface);
+}
+
+.chat-message.is-you {
+    justify-self: end;
+    background: var(--blue-bg);
+}
+
+.chat-sender {
+    color: var(--text-3);
+    font-size: 11px;
+    font-weight: 700;
+}
+
+.chat-message.is-you .chat-sender {
+    color: var(--blue-light);
+}
+
+.chat-text {
+    color: var(--text);
+    font-size: 13px;
+    line-height: 1.45;
+    word-break: break-word;
+}
+
+.chat-composer {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 8px;
+    border-top: 1px solid var(--border);
+    padding: 10px 12px;
+    background: var(--bg);
+}

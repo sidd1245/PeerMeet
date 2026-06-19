@@ -1,0 +1,85 @@
+.participants-list {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    overflow-y: auto;
+    padding: 8px 0;
+}
+
+.participant-card {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 16px;
+    transition: background 120ms ease;
+}
+
+.participant-card:hover {
+    background: var(--surface);
+}
+
+.participant-avatar {
+    width: 36px;
+    height: 36px;
+    display: grid;
+    place-items: center;
+    flex-shrink: 0;
+    border-radius: 50%;
+    background: var(--surface-2);
+    color: var(--text-2);
+    font-weight: 700;
+}
+
+.participant-content {
+    min-width: 0;
+}
+
+.participant-name {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 7px;
+    color: var(--text);
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.participant-status {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 7px;
+    margin-top: 5px;
+}
+
+.status-dot {
+    color: var(--text-3);
+    font-size: 11px;
+    font-weight: 600;
+}
+
+.status-dot.off {
+    color: var(--red);
+}
+
+.badge {
+    height: 18px;
+    display: inline-flex;
+    align-items: center;
+    border-radius: 4px;
+    padding: 0 6px;
+    background: var(--surface-2);
+    color: var(--text-3);
+    font-size: 10px;
+    font-weight: 800;
+    text-transform: uppercase;
+}
+
+.badge.host {
+    background: var(--blue-bg);
+    color: var(--blue-light);
+}
+
+.badge.hand {
+    background: var(--yellow-bg);
+    color: var(--yellow);
+}

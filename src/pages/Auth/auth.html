@@ -1,0 +1,64 @@
+<section
+        id="authPage"
+        class="auth-page"
+>
+    <div class="auth-brand">
+        <span class="brand-icon">P</span>
+        <div>
+            <h1>PeerMeet</h1>
+            <p>Secure peer-to-peer meetings for teams and guests.</p>
+        </div>
+    </div>
+
+    <main class="auth-layout">
+        <section class="auth-copy">
+            <p class="eyebrow">Meet-ready identity</p>
+            <h2>Sign in, continue as guest, or join with a meeting code.</h2>
+            <p>
+                PeerMeet now separates identity from joining, so authenticated users can
+                get meeting history later while guests can still request access quickly.
+            </p>
+        </section>
+
+        <section class="auth-card">
+            <div class="field-group">
+                <label for="authNameInput">Display name</label>
+                <input
+                        id="authNameInput"
+                        class="text-input"
+                        autocomplete="name"
+                        placeholder="Your name"
+                >
+            </div>
+
+            <div class="field-group">
+                <label for="authEmailInput">Email</label>
+                <input
+                        id="authEmailInput"
+                        class="text-input"
+                        autocomplete="email"
+                        placeholder="you@example.com"
+                        type="email"
+                >
+            </div>
+
+            <button
+                    id="signInBtn"
+                    class="btn btn-primary btn-full"
+            >
+                Sign in
+            </button>
+
+            <div class="divider">
+                <span>or</span>
+            </div>
+
+            <button
+                    id="guestBtn"
+                    class="btn btn-secondary btn-full"
+            >
+                Continue as guest
+            </button>
+        </section>
+    </main>
+</section>

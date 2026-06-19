@@ -1,0 +1,98 @@
+.control-bar {
+    min-height: var(--controlbar-height);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    border-top: 1px solid var(--border);
+    padding: 0 16px;
+    background: var(--bg);
+}
+
+.control-btn {
+    min-width: 74px;
+    height: 54px;
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    border: 0;
+    border-radius: var(--radius);
+    padding: 0 8px;
+    background: transparent;
+    color: var(--text-2);
+    font-size: 11px;
+    font-weight: 700;
+    white-space: nowrap;
+    transition: background 120ms ease, color 120ms ease;
+}
+
+.control-btn:hover {
+    background: var(--surface);
+    color: var(--text);
+}
+
+.control-icon {
+    min-width: 38px;
+    height: 28px;
+    display: grid;
+    place-items: center;
+    border-radius: 999px;
+    background: var(--surface-2);
+    font-size: 10px;
+    font-weight: 800;
+}
+
+.control-btn.is-active {
+    color: var(--blue-light);
+}
+
+.control-btn.is-active .control-icon {
+    background: var(--blue-bg);
+}
+
+.control-btn.danger {
+    color: var(--red);
+}
+
+.control-btn.danger .control-icon {
+    background: var(--red-bg);
+    color: var(--red);
+}
+
+.control-btn.danger.solid .control-icon,
+.control-btn.danger:hover .control-icon {
+    background: var(--red);
+    color: #ffffff;
+}
+
+.control-btn.warning {
+    color: var(--yellow);
+}
+
+.control-btn.warning .control-icon {
+    background: var(--yellow-bg);
+    color: var(--yellow);
+}
+
+.host-controls {
+    display: flex;
+    gap: 6px;
+    margin-left: 8px;
+    padding-left: 8px;
+    border-left: 1px solid var(--border);
+}
+
+@media (max-width: 860px) {
+    .control-bar {
+        justify-content: flex-start;
+        overflow-x: auto;
+        padding: 0 12px;
+    }
+
+    .control-btn {
+        flex: 0 0 auto;
+        min-width: 64px;
+    }
+}

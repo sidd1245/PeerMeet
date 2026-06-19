@@ -1,0 +1,80 @@
+<section
+        id="preJoinPage"
+        class="prejoin-page is-hidden"
+>
+    <header class="prejoin-header">
+        <div class="brand-mark">
+            <span class="brand-icon">P</span>
+            <div>
+                <h1>PeerMeet</h1>
+                <p>Ready check before you enter</p>
+            </div>
+        </div>
+    </header>
+
+    <main class="prejoin-layout">
+        <section class="preview-card">
+            <div class="camera-preview">
+                <video
+                        id="preJoinVideo"
+                        autoplay
+                        muted
+                        playsinline
+                ></video>
+                <div class="preview-placeholder">Camera preview</div>
+            </div>
+            <div class="prejoin-device-row">
+                <button
+                        id="previewMicBtn"
+                        class="control-btn"
+                >
+                    <span class="control-icon">Mic</span>
+                    <span>Mic on</span>
+                </button>
+                <button
+                        id="previewCameraBtn"
+                        class="control-btn"
+                >
+                    <span class="control-icon">Cam</span>
+                    <span>Camera on</span>
+                </button>
+            </div>
+        </section>
+
+        <section class="join-card">
+            <span class="section-label">Joining meeting</span>
+            <h2 id="preJoinRoomId">None</h2>
+            <p id="preJoinIdentity">Signed in as Guest</p>
+
+            <div class="field-group">
+                <label for="preJoinNameInput">Display name</label>
+                <input
+                        id="preJoinNameInput"
+                        class="text-input"
+                        placeholder="Your name"
+                >
+            </div>
+
+            <div class="prejoin-actions">
+                <button
+                        id="joinNowBtn"
+                        class="btn btn-primary btn-full"
+                >
+                    Join now
+                </button>
+                <button
+                        id="askToJoinBtn"
+                        class="btn btn-secondary btn-full"
+                >
+                    Ask to join as guest
+                </button>
+                <button
+                        id="backToLobbyBtn"
+                        class="icon-btn"
+                >
+                    Back
+                </button>
+            </div>
+        </section>
+    </main>
+</section>

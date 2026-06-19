@@ -1,0 +1,70 @@
+<section
+        id="roomPage"
+        class="room-page is-hidden"
+>
+    <header id="topBarMount"></header>
+
+    <main class="meeting-layout">
+        <section
+                class="stage"
+                aria-label="Video grid"
+        >
+            <div
+                    id="presentingBanner"
+                    class="presenting-banner is-hidden"
+            >
+                Presentation active
+            </div>
+            <div
+                    id="videoGrid"
+                    class="video-grid"
+                    aria-label="Participant videos"
+            ></div>
+        </section>
+
+        <aside
+                id="sidePanel"
+                class="side-panel"
+                aria-label="Meeting sidebar"
+        >
+            <div
+                    class="panel-tabs"
+                    role="tablist"
+            >
+                <button
+                        class="tab-btn is-active"
+                        data-panel="chat"
+                        id="chatToggleBtn"
+                        role="tab"
+                        aria-selected="true"
+                >
+                    Chat
+                </button>
+                <button
+                        class="tab-btn"
+                        data-panel="participants"
+                        id="participantsToggleBtn"
+                        role="tab"
+                        aria-selected="false"
+                >
+                    People
+                </button>
+                <button
+                        class="tab-btn"
+                        data-panel="activity"
+                        id="activityToggleBtn"
+                        role="tab"
+                        aria-selected="false"
+                >
+                    Activity
+                </button>
+            </div>
+
+            <div id="chatPanelMount"></div>
+            <div id="participantPanelMount"></div>
+            <div id="activityPanelMount"></div>
+        </aside>
+    </main>
+
+    <footer id="bottomControlsMount"></footer>
+</section>
