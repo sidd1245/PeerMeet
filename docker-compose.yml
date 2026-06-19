@@ -1,0 +1,17 @@
+services:
+
+  redis:
+    image: redis:7-alpine
+
+  livekit:
+    image: livekit/livekit-server:latest
+
+    command: >
+      --dev
+
+    ports:
+      - "7880:7880"
+      - "7881:7881"
+
+    depends_on:
+      - redis
