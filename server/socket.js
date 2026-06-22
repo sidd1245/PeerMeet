@@ -94,21 +94,18 @@ export function setupSocket(io) {
         socket.on("join-room", data => {
 
             const {
-                roomId, user, peerId
+                roomId, user
             } = data;
 
             const room = joinRoom(roomId, {
                 socketId: socket.id,
-
-                peerId,
-
                 user
             });
 
             socket.join(roomId);
 
             socket.to(roomId).emit("participant-joined", {
-                user, peerId
+                user
             });
 
             io.to(roomId).emit("room-updated", room);

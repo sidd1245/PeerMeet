@@ -2,7 +2,8 @@ import { AccessToken } from "livekit-server-sdk";
 
 export async function createLiveKitToken({
                                              roomName,
-                                             identity
+                                             identity,
+                                             name
                                          }) {
 
     const apiKey = process.env.LIVEKIT_API_KEY;
@@ -12,7 +13,8 @@ export async function createLiveKitToken({
         apiKey,
         apiSecret,
         {
-            identity
+            identity,
+            name
         }
     );
 

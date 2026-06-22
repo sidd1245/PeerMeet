@@ -18,12 +18,18 @@ export function renderLocalVideo(stream) {
 
 }
 
-export function renderRemoteVideo(peerId, stream) {
+export function renderRemoteVideo(participantId,participantName, stream) {
 
     const video = getOrCreateVideoTile({
-        id: `video-${peerId}`,
-        label: "Guest"
+        id: `video-${participantId}`,
+        label: participantName,
     });
+
+    console.log(
+        "Rendering video for:",
+        participantId,
+        stream
+    );
 
     video.srcObject = stream;
     video.volume = 1;
@@ -31,8 +37,8 @@ export function renderRemoteVideo(peerId, stream) {
 
 }
 
-export function removeRemoteVideo(peerId) {
+export function removeRemoteVideo(participantId) {
 
-    removeVideoTile(`video-${peerId}`);
+    removeVideoTile(`video-${participantId}`);
 
 }

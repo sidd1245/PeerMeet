@@ -1,32 +1,9 @@
 import {
-    createPeer
-} from "../features/peerjs/peerManager.js";
+    connectRoom, toggleCamera, toggleMicrophone, toggleScreenShare, setScreenShareStoppedHandler
+} from "../features/livekit/roomConnection.js";
 
 import {
-    getCalls,
-    removeCall,
-    removeRemoteStream
-} from "../features/call/callState.js";
-
-import {
-    removeRemoteVideo
-} from "../features/call/videoRenderer.js";
-
-import {
-    initializeCalls,
-    setupIncomingCalls,
-    callParticipant,
-    toggleCamera,
-    toggleMicrophone
-} from "../features/call/callManager.js";
-
-import {
-    setConnection
-} from "../features/peerjs/dataConnectionManager.js";
-
-import {
-    saveUser,
-    getUser
+    saveUser, getUser
 } from "../services/storage.js";
 
 import {
@@ -58,32 +35,19 @@ import {
 } from "../features/call/mediaStatusState.js";
 
 import {
-    startScreenSharing
-} from "../features/call/screenShareManager.js";
-
-import {
     getParticipants
 } from "../features/participants/participantState.js";
 
-export function createMeetingApp({
-    authPage,
-    lobbyPage,
-    preJoinPage,
-    roomPage,
-    notificationCenter
-}) {
+export function createMeetingApp({authPage, lobbyPage, preJoinPage, roomPage, notificationCenter}) {
 
-    let peerId = null;
     let mySocketId = null;
     let handRaised = false;
     let localUser = getUser();
     let pendingRoomId = null;
     let pendingActivityMessage = "";
     let pendingMediaPreferences = {
-        audioEnabled: true,
-        videoEnabled: true
+        audioEnabled: true, videoEnabled: true
     };
-    const peer = createPeer();
 
     function init() {
 
@@ -111,8 +75,6 @@ export function createMeetingApp({
         lobbyPage.setMeetingLink(getMeetingLink(lobbyPage.getRoomId()));
         roomPage.showEmptyStates();
 
-        setupIncomingCalls(peer);
-        bindPeerEvents();
         bindSocketEvents();
         bindAuthEvents();
         bindLobbyEvents();
@@ -121,27 +83,11 @@ export function createMeetingApp({
 
     }
 
-    function bindPeerEvents() {
-
-        peer.on("open", id => {
-            peerId = id;
-            lobbyPage.setStatus("Ready", "ready");
-            roomPage.setPeerId(id);
-            roomPage.log(`My Peer ID: ${id}`);
-        });
-
-        peer.on("connection", conn => {
-            setConnection(conn.peer, conn);
-            setupConnection(conn);
-        });
-
-    }
-
     function bindSocketEvents() {
 
         socket.on("connect", () => {
             mySocketId = socket.id;
-            lobbyPage.setStatus(peerId ? "Ready" : "Connecting", peerId ? "ready" : "connecting");
+            lobbyPage.setStatus("Ready", "ready");
             roomPage.log("Connected to backend");
         });
 
@@ -177,8 +123,8 @@ export function createMeetingApp({
             location.reload();
         });
 
-        socket.on("force-mute", () => {
-            forceMuteLocalUser();
+        socket.on("force-mute", async () => {
+            await forceMuteLocalUser();
         });
 
         socket.on("activity", data => {
@@ -193,9 +139,7 @@ export function createMeetingApp({
 
         socket.on("chat-message", data => {
             roomPage.addChatMessage({
-                sender: data.user,
-                text: data.message,
-                isYou: data.user === localUser?.name
+                sender: data.user, text: data.message, isYou: data.user === localUser?.name
             });
         });
 
@@ -212,8 +156,7 @@ export function createMeetingApp({
             }
 
             localUser = {
-                id: localUser?.id || crypto.randomUUID(),
-                ...profile
+                id: localUser?.id || crypto.randomUUID(), ...profile
             };
 
             saveUser(localUser);
@@ -226,8 +169,7 @@ export function createMeetingApp({
             const profile = authPage.getGuestProfile();
 
             localUser = {
-                id: localUser?.id || crypto.randomUUID(),
-                ...profile
+                id: localUser?.id || crypto.randomUUID(), ...profile
             };
 
             saveUser(localUser);
@@ -241,7 +183,7 @@ export function createMeetingApp({
     function bindLobbyEvents() {
 
         lobbyPage.onCreate(async () => {
-            if (!ensurePeerReady() || !ensureUserReady()) {
+            if (!ensureUserReady()) {
                 return;
             }
 
@@ -250,7 +192,7 @@ export function createMeetingApp({
         });
 
         lobbyPage.onJoin(async () => {
-            if (!ensurePeerReady() || !ensureUserReady()) {
+            if (!ensureUserReady()) {
                 return;
             }
 
@@ -265,9 +207,7 @@ export function createMeetingApp({
         });
 
         lobbyPage.onCopyLink(async () => {
-            const roomId = roomPage.getCurrentRoom() === "None"
-                ? lobbyPage.getRoomId()
-                : roomPage.getCurrentRoom();
+            const roomId = roomPage.getCurrentRoom() === "None" ? lobbyPage.getRoomId() : roomPage.getCurrentRoom();
 
             if (!roomId || roomId === "None") {
                 return;
@@ -305,6 +245,13 @@ export function createMeetingApp({
 
     function bindRoomEvents() {
 
+        setScreenShareStoppedHandler(() => {
+
+            roomPage.hidePresenting();
+            roomPage.setLocalPresenting(false);
+
+        });
+
         roomPage.onSendChat(sendChatMessage);
 
         roomPage.onLeave(() => {
@@ -319,8 +266,8 @@ export function createMeetingApp({
             socket.emit("mute-all", roomPage.getCurrentRoom());
         });
 
-        roomPage.onToggleMicrophone(() => {
-            const audioEnabled = toggleMicrophone();
+        roomPage.onToggleMicrophone(async () => {
+            const audioEnabled = await toggleMicrophone();
 
             if (typeof audioEnabled !== "boolean") {
                 return;
@@ -330,8 +277,8 @@ export function createMeetingApp({
             emitMediaStatus({audioEnabled});
         });
 
-        roomPage.onToggleCamera(() => {
-            const videoEnabled = toggleCamera();
+        roomPage.onToggleCamera(async () => {
+            const videoEnabled = await toggleCamera();
 
             if (typeof videoEnabled !== "boolean") {
                 return;
@@ -342,20 +289,29 @@ export function createMeetingApp({
         });
 
         roomPage.onShareScreen(async () => {
-            const started = await startScreenSharing();
+
+            const started = await toggleScreenShare();
 
             if (started) {
+
                 roomPage.showPresenting("You are presenting");
+
                 roomPage.setLocalPresenting(true);
+
+            } else {
+
+                roomPage.hidePresenting();
+                roomPage.setLocalPresenting(false);
+
             }
+
         });
 
         roomPage.onRaiseHand(() => {
             handRaised = !handRaised;
 
             socket.emit(handRaised ? "raise-hand" : "lower-hand", {
-                roomId: roomPage.getCurrentRoom(),
-                userId: localUser.id
+                roomId: roomPage.getCurrentRoom(), userId: localUser.id
             });
 
             roomPage.setHandRaised(handRaised);
@@ -388,8 +344,7 @@ export function createMeetingApp({
         }
 
         localUser = {
-            ...localUser,
-            name: displayName
+            ...localUser, name: displayName
         };
 
         saveUser(localUser);
@@ -414,13 +369,16 @@ export function createMeetingApp({
         preJoinPage.hide();
         roomPage.show();
 
-        await initializeCalls();
-        applyInitialMediaPreferences();
+        await connectRoom({
+            roomName: roomId, identity: localUser.id, name: localUser.name
+        });
+
+        // await initializeLocalMedia();
+
+        await applyInitialMediaPreferences();
 
         socket.emit("join-room", {
-            roomId,
-            user: localUser,
-            peerId
+            roomId, user: localUser
         });
 
         pushActivity(activityMessage);
@@ -431,12 +389,11 @@ export function createMeetingApp({
     function handleRoomUpdated(room) {
 
         const {
-            hostId,
-            participants
+            hostId, participants
         } = room;
 
         updateParticipants(participants);
-        closeDisconnectedCalls(participants);
+        // closeDisconnectedCalls(participants);
 
         const host = participants.find(participant => participant.socketId === hostId);
 
@@ -445,29 +402,6 @@ export function createMeetingApp({
         }
 
         roomPage.setHostControlsVisible(mySocketId === hostId);
-
-        participants.forEach(participant => {
-            if (participant.peerId === peerId) {
-                return;
-            }
-
-            callParticipant(peer, participant.peerId);
-        });
-
-    }
-
-    function closeDisconnectedCalls(participants) {
-
-        const activePeerIds = participants.map(participant => participant.peerId);
-
-        getCalls().forEach((call, remotePeerId) => {
-            if (!activePeerIds.includes(remotePeerId)) {
-                call.close();
-                removeCall(remotePeerId);
-                removeRemoteStream(remotePeerId);
-                removeRemoteVideo(remotePeerId);
-            }
-        });
 
     }
 
@@ -478,8 +412,7 @@ export function createMeetingApp({
 
         participants.forEach(participant => {
             store.set(participant.user.id, {
-                ...participant.user,
-                handRaised: participant.handRaised || false
+                ...participant.user, handRaised: participant.handRaised || false
             });
 
             if (!getMediaStatus(participant.user.id)) {
@@ -494,9 +427,7 @@ export function createMeetingApp({
     function renderParticipants() {
 
         roomPage.renderParticipants({
-            participants: getParticipants(),
-            mediaStatusFor: getMediaStatus,
-            hostName: roomPage.getHostName()
+            participants: getParticipants(), mediaStatusFor: getMediaStatus, hostName: roomPage.getHostName()
         });
 
     }
@@ -523,33 +454,28 @@ export function createMeetingApp({
         }
 
         socket.emit("chat-message", {
-            roomId: roomPage.getCurrentRoom(),
-            user: localUser.name,
-            message: text
+            roomId: roomPage.getCurrentRoom(), user: localUser.name, message: text
         });
 
         roomPage.addChatMessage({
-            sender: "You",
-            text,
-            isYou: true
+            sender: "You", text, isYou: true
         });
 
         roomPage.clearChatText();
 
     }
 
-    function forceMuteLocalUser() {
+    async function forceMuteLocalUser() {
 
         const current = getMediaStatus(localUser.id) || {
-            audioEnabled: true,
-            videoEnabled: true
+            audioEnabled: true, videoEnabled: true
         };
 
         if (!current.audioEnabled) {
             return;
         }
 
-        toggleMicrophone();
+        await toggleMicrophone();
         updateMediaStatus(localUser.id, false, current.videoEnabled);
 
         socket.emit("media-status-changed", {
@@ -567,8 +493,7 @@ export function createMeetingApp({
     function emitMediaStatus(nextStatus) {
 
         const current = getMediaStatus(localUser.id) || {
-            audioEnabled: true,
-            videoEnabled: true
+            audioEnabled: true, videoEnabled: true
         };
 
         const audioEnabled = nextStatus.audioEnabled ?? current.audioEnabled;
@@ -577,48 +502,33 @@ export function createMeetingApp({
         updateMediaStatus(localUser.id, audioEnabled, videoEnabled);
 
         socket.emit("media-status-changed", {
-            roomId: roomPage.getCurrentRoom(),
-            userId: localUser.id,
-            audioEnabled,
-            videoEnabled
+            roomId: roomPage.getCurrentRoom(), userId: localUser.id, audioEnabled, videoEnabled
         });
 
         renderParticipants();
 
     }
 
-    function applyInitialMediaPreferences() {
+    async function applyInitialMediaPreferences() {
 
         const current = getMediaStatus(localUser.id) || {
-            audioEnabled: true,
-            videoEnabled: true
+            audioEnabled: true, videoEnabled: true
         };
 
         let audioEnabled = current.audioEnabled;
         let videoEnabled = current.videoEnabled;
 
         if (!pendingMediaPreferences.audioEnabled && current.audioEnabled) {
-            audioEnabled = toggleMicrophone();
+            audioEnabled = await toggleMicrophone();
         }
 
         if (!pendingMediaPreferences.videoEnabled && current.videoEnabled) {
-            videoEnabled = toggleCamera();
+            videoEnabled = await toggleCamera();
         }
 
         updateMediaStatus(localUser.id, audioEnabled, videoEnabled);
         roomPage.setMuteState(audioEnabled);
         roomPage.setCameraState(videoEnabled);
-
-    }
-
-    function ensurePeerReady() {
-
-        if (peerId) {
-            return true;
-        }
-
-        alert("Call connection is still starting. Try again in a moment.");
-        return false;
 
     }
 
@@ -632,8 +542,7 @@ export function createMeetingApp({
         }
 
         localUser = {
-            id: localUser?.id || crypto.randomUUID(),
-            name
+            id: localUser?.id || crypto.randomUUID(), name
         };
 
         saveUser(localUser);
@@ -647,18 +556,6 @@ export function createMeetingApp({
         preJoinPage.hide();
         roomPage.hide();
         lobbyPage.show();
-
-    }
-
-    function setupConnection(conn) {
-
-        conn.on("open", () => {
-            roomPage.log("Connection open");
-        });
-
-        conn.on("data", data => {
-            roomPage.log(`Remote: ${data}`);
-        });
 
     }
 

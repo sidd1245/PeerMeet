@@ -1,40 +1,166 @@
 import {
-    Room,
-    RoomEvent
+    Room, RoomEvent
 } from "livekit-client";
 
+import {
+    renderRemoteVideo, removeRemoteVideo, renderLocalVideo
+} from "../call/videoRenderer.js";
+
 let room = null;
+let onScreenShareStopped = null;
+
+export function setScreenShareStoppedHandler(handler) {
+    onScreenShareStopped = handler;
+}
 
 export async function connectRoom({
-                                      roomName,
-                                      identity
+                                      roomName, identity, name
                                   }) {
 
-    const response = await fetch(
-        "http://localhost:3000/api/livekit/token",
-        {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({
-                roomName,
-                identity
-            })
-        }
-    );
+    const response = await fetch("http://localhost:3000/api/livekit/token", {
+        method: "POST", headers: {
+            "Content-Type": "application/json"
+        }, body: JSON.stringify({
+            roomName, identity, name
+        })
+    });
+
+    const data = await response.json();
+
+    console.log("LiveKit token response:", data);
 
     const {
-        token,
-        url
-    } = await response.json();
+        token, url
+    } = data;
 
     room = new Room();
 
-    await room.connect(
-        url,
-        token
-    );
+    room.on(RoomEvent.LocalTrackPublished, publication => {
+        console.log("LOCAL TRACK PUBLISHED:", publication.kind);
+    });
+
+    room.on(RoomEvent.LocalTrackUnpublished, publication => {
+        if (publication.source === "screen_share") {
+            onScreenShareStopped?.();
+        }
+    });
+
+    room.on("connected", () => {
+        console.log("LIVEKIT CONNECTED");
+    });
+
+    room.on("disconnected", () => {
+        console.log("LIVEKIT DISCONNECTED");
+    });
+
+    console.log("Connecting to:", url);
+    console.log("Room:", roomName);
+    console.log("Identity:", identity);
+
+    room.on(RoomEvent.ParticipantConnected, participant => {
+
+        console.log("Participant connected:", participant.identity);
+
+    });
+
+    room.on(RoomEvent.TrackSubscribed, (track, publication, participant) => {
+
+        console.log("SUBSCRIBED", publication.source, track.kind, participant.identity);
+
+        if (participant.identity === room.localParticipant.identity) {
+            return;
+        }
+
+        console.log("Track subscribed:", participant.identity, track.kind);
+
+        if (track.kind !== "video") {
+            return;
+        }
+
+        const mediaStream = new MediaStream([track.mediaStreamTrack]);
+
+        renderRemoteVideo(participant.identity, participant.name || participant.identity, mediaStream);
+
+    });
+
+    room.on(RoomEvent.TrackUnsubscribed, (track, publication, participant) => {
+        console.log("UNSUBSCRIBED", track.kind, publication.source, participant.identity);
+
+        if (publication.source === "screen_share") {
+
+            const cameraPublication = [...participant.videoTrackPublications.values()]
+                .find(pub => pub.source === "camera");
+
+            const cameraTrack = cameraPublication?.track;
+
+            if (cameraTrack) {
+
+                const stream = new MediaStream([cameraTrack.mediaStreamTrack]);
+
+                renderRemoteVideo(participant.identity, participant.name, stream);
+
+            }
+            return;
+
+        }
+
+        removeRemoteVideo(participant.identity);
+
+    });
+
+    room.on(RoomEvent.TrackMuted, (publication, participant) => {
+
+        console.log("TRACK MUTED", participant?.identity, publication.kind);
+
+    });
+
+    room.on(RoomEvent.TrackUnmuted, (publication, participant) => {
+
+        if (participant.identity === room.localParticipant.identity) {
+            return;
+        }
+
+        console.log("TRACK UNMUTED", participant?.identity, publication.kind);
+
+        if (publication.kind !== "video" || !publication.track) {
+            return;
+        }
+
+        const stream = new MediaStream([publication.track.mediaStreamTrack]);
+
+        renderRemoteVideo(participant.identity, participant.name || participant.identity, stream);
+
+    });
+    await room.connect(url, token);
+
+    await room.localParticipant.enableCameraAndMicrophone();
+
+    const localPublication = [...room.localParticipant.videoTrackPublications.values()][0];
+
+    const localTrack = localPublication?.track;
+
+    if (localTrack) {
+
+        const localStream = new MediaStream([localTrack.mediaStreamTrack]);
+
+        renderLocalVideo(localStream);
+
+    }
+    console.log("Camera and microphone published");
+
+    room.remoteParticipants.forEach(participant => {
+
+        console.log("Existing participant:", participant.identity);
+
+        participant.trackPublications.forEach(publication => {
+
+            console.log("Existing publication:", publication.kind, publication.isSubscribed);
+
+        });
+
+    });
+
+    console.log("Remote participants after join:", room.remoteParticipants.size);
 
     return room;
 }
@@ -52,4 +178,76 @@ export async function disconnectRoom() {
     await room.disconnect();
 
     room = null;
+}
+
+export async function toggleMicrophone() {
+
+    if (!room) {
+        return;
+    }
+
+    const enabled = room.localParticipant.isMicrophoneEnabled;
+
+    await room.localParticipant.setMicrophoneEnabled(!enabled);
+
+    return !enabled;
+
+}
+
+export async function toggleCamera() {
+
+    if (!room) {
+        return;
+    }
+
+    const enabled = room.localParticipant.isCameraEnabled;
+
+    await room.localParticipant.setCameraEnabled(!enabled);
+
+    if (!enabled) {
+        refreshLocalVideo();
+    }
+
+    if (!enabled) {
+
+        const publication = [...room.localParticipant.videoTrackPublications.values()][0];
+
+        console.log("publication", publication);
+
+        console.log("track", publication?.track);
+
+    }
+
+    return !enabled;
+
+}
+
+export async function toggleScreenShare() {
+
+    if (!room) {
+        return false;
+    }
+
+    const enabled = room.localParticipant.isScreenShareEnabled;
+
+    await room.localParticipant.setScreenShareEnabled(!enabled);
+
+    return !enabled;
+
+}
+
+function refreshLocalVideo() {
+
+    const publication = [...room.localParticipant.videoTrackPublications.values()][0];
+
+    const track = publication?.track;
+
+    if (!track) {
+        return;
+    }
+
+    const stream = new MediaStream([track.mediaStreamTrack]);
+
+    renderLocalVideo(stream);
+
 }

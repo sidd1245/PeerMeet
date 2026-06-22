@@ -61,8 +61,8 @@ export function createRoomPage() {
         refs.sidePanel.classList.add("is-open");
     });
 
-    bottomControls.onOpenSettings(() => {
-        settingsPanel.open();
+    bottomControls.onOpenSettings(async () => {
+        await settingsPanel.open();
     });
 
     return {
@@ -77,7 +77,6 @@ export function createRoomPage() {
         setCurrentRoom: topBar.setRoomId,
         getCurrentRoom: topBar.getRoomId,
         setMeetingStatus: topBar.setStatus,
-        setPeerId: topBar.setPeerId,
         setHostName: topBar.setHostName,
         getHostName: topBar.getHostName,
         setHostControlsVisible: bottomControls.setHostControlsVisible,

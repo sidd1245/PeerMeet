@@ -30,7 +30,7 @@ app.post("/api/livekit/token", async (req, res) => {
     try {
 
         const {
-            roomName, identity
+            roomName, identity, name
         } = req.body;
 
         if (!roomName || !identity) {
@@ -42,7 +42,7 @@ app.post("/api/livekit/token", async (req, res) => {
         }
 
         const result = await createLiveKitToken({
-            roomName, identity
+            roomName, identity, name
         });
 
         return res.json(result);

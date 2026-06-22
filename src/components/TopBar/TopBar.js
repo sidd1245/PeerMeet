@@ -20,7 +20,6 @@ export function createTopBar() {
             </span>
             <span class="meta-chip">Host: <strong id="hostName">Unknown</strong></span>
             <span class="meta-chip"><strong id="participantCount">0</strong> participants</span>
-            <span class="meta-chip peer-chip">Peer: <strong id="peerId">Connecting...</strong></span>
         </div>
     `;
 
@@ -28,7 +27,6 @@ export function createTopBar() {
         roomId: element.querySelector("#currentRoom"),
         status: element.querySelector("#meetingStatus"),
         hostName: element.querySelector("#hostName"),
-        peerId: element.querySelector("#peerId")
     };
 
     return {
@@ -44,9 +42,6 @@ export function createTopBar() {
             refs.hostName.textContent = name || "Unknown";
         },
         getHostName: () => refs.hostName.textContent,
-        setPeerId: id => {
-            refs.peerId.textContent = id;
-        }
     };
 
 }
