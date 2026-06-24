@@ -1,10 +1,19 @@
 import {
-    Room, RoomEvent
+    Room, RoomEvent, ConnectionState, createLocalVideoTrack, createLocalAudioTrack
 } from "livekit-client";
 
 import {
     renderRemoteVideo, removeRemoteVideo, renderLocalVideo
 } from "../call/videoRenderer.js";
+
+import {
+    setActiveSpeaker
+} from "../participants/activeSpeakerState.js";
+
+import {
+    showAvatar, hideAvatar, setMicMuted, setMicUnmuted,
+    getOrCreatePresentationStage, removePresentationStage
+} from "../../components/VideoGrid/VideoGrid.js";
 
 let room = null;
 let onScreenShareStopped = null;
@@ -14,7 +23,7 @@ export function setScreenShareStoppedHandler(handler) {
 }
 
 export async function connectRoom({
-                                      roomName, identity, name
+                                      roomName, identity, name, onReconnecting, onReconnected, onDisconnected
                                   }) {
 
     const response = await fetch("http://localhost:3000/api/livekit/token", {
@@ -36,13 +45,29 @@ export async function connectRoom({
     room = new Room();
 
     room.on(RoomEvent.LocalTrackPublished, publication => {
+
         console.log("LOCAL TRACK PUBLISHED:", publication.kind);
+
+        if (publication.source !== "screen_share" || !publication.track) {
+            return;
+        }
+
+        const stream = new MediaStream([publication.track.mediaStreamTrack]);
+
+        renderLocalScreenShare(stream);
+
     });
 
     room.on(RoomEvent.LocalTrackUnpublished, publication => {
-        if (publication.source === "screen_share") {
-            onScreenShareStopped?.();
+
+        if (publication.source !== "screen_share") {
+            return;
         }
+
+        removePresentationStage(room.localParticipant.identity);
+
+        onScreenShareStopped?.();
+
     });
 
     room.on("connected", () => {
@@ -51,6 +76,27 @@ export async function connectRoom({
 
     room.on("disconnected", () => {
         console.log("LIVEKIT DISCONNECTED");
+    });
+
+    room.on(RoomEvent.ConnectionStateChanged, state => {
+
+        if (state === ConnectionState.SignalReconnecting || state === ConnectionState.Reconnecting) {
+
+            onReconnecting?.();
+
+        }
+
+        if (state === ConnectionState.Connected) {
+
+            onReconnected?.();
+
+        }
+
+        if (state === ConnectionState.Disconnected) {
+
+            onDisconnected?.();
+
+        }
     });
 
     console.log("Connecting to:", url);
@@ -71,37 +117,38 @@ export async function connectRoom({
             return;
         }
 
-        console.log("Track subscribed:", participant.identity, track.kind);
-
         if (track.kind !== "video") {
             return;
         }
 
         const mediaStream = new MediaStream([track.mediaStreamTrack]);
 
+        if (publication.source === "screen_share") {
+
+            renderRemoteScreenShare(participant.identity, participant.name || participant.identity, mediaStream);
+
+            return;
+
+        }
+
         renderRemoteVideo(participant.identity, participant.name || participant.identity, mediaStream);
 
     });
 
     room.on(RoomEvent.TrackUnsubscribed, (track, publication, participant) => {
+
         console.log("UNSUBSCRIBED", track.kind, publication.source, participant.identity);
 
         if (publication.source === "screen_share") {
 
-            const cameraPublication = [...participant.videoTrackPublications.values()]
-                .find(pub => pub.source === "camera");
+            removePresentationStage(participant.identity);
 
-            const cameraTrack = cameraPublication?.track;
-
-            if (cameraTrack) {
-
-                const stream = new MediaStream([cameraTrack.mediaStreamTrack]);
-
-                renderRemoteVideo(participant.identity, participant.name, stream);
-
-            }
             return;
 
+        }
+
+        if (track.kind !== "video") {
+            return;
         }
 
         removeRemoteVideo(participant.identity);
@@ -110,8 +157,17 @@ export async function connectRoom({
 
     room.on(RoomEvent.TrackMuted, (publication, participant) => {
 
-        console.log("TRACK MUTED", participant?.identity, publication.kind);
+        if (publication.kind === "video" && publication.source === "camera") {
 
+            showAvatar(`video-${participant.identity}`);
+
+        }
+
+        if (publication.kind === "audio") {
+
+            setMicMuted(`video-${participant.identity}`);
+
+        }
     });
 
     room.on(RoomEvent.TrackUnmuted, (publication, participant) => {
@@ -120,17 +176,25 @@ export async function connectRoom({
             return;
         }
 
-        console.log("TRACK UNMUTED", participant?.identity, publication.kind);
+        if (publication.kind === "audio") {
 
-        if (publication.kind !== "video" || !publication.track) {
+            setMicUnmuted(`video-${participant.identity}`);
+
+            return;
+        }
+
+        if (publication.kind !== "video" || publication.source !== "camera" || !publication.track) {
             return;
         }
 
         const stream = new MediaStream([publication.track.mediaStreamTrack]);
 
+        hideAvatar(`video-${participant.identity}`);
+
         renderRemoteVideo(participant.identity, participant.name || participant.identity, stream);
 
     });
+
     await room.connect(url, token);
 
     await room.localParticipant.enableCameraAndMicrophone();
@@ -160,9 +224,27 @@ export async function connectRoom({
 
     });
 
+    room.on(RoomEvent.ActiveSpeakersChanged, speakers => {
+
+        if (speakers.length > 0) {
+            console.log("Active speaker:", speakers[0]?.identity);
+            setActiveSpeaker(speakers[0].identity);
+        } else {
+            setActiveSpeaker(null);
+        }
+
+    });
+
     console.log("Remote participants after join:", room.remoteParticipants.size);
 
     return room;
+}
+
+function getLocalCameraPublication() {
+
+    return [...room.localParticipant.videoTrackPublications.values()]
+        .find(pub => pub.source === "camera");
+
 }
 
 export function getRoom() {
@@ -208,16 +290,6 @@ export async function toggleCamera() {
         refreshLocalVideo();
     }
 
-    if (!enabled) {
-
-        const publication = [...room.localParticipant.videoTrackPublications.values()][0];
-
-        console.log("publication", publication);
-
-        console.log("track", publication?.track);
-
-    }
-
     return !enabled;
 
 }
@@ -238,7 +310,7 @@ export async function toggleScreenShare() {
 
 function refreshLocalVideo() {
 
-    const publication = [...room.localParticipant.videoTrackPublications.values()][0];
+    const publication = getLocalCameraPublication();
 
     const track = publication?.track;
 
@@ -249,5 +321,74 @@ function refreshLocalVideo() {
     const stream = new MediaStream([track.mediaStreamTrack]);
 
     renderLocalVideo(stream);
+
+}
+
+function renderLocalScreenShare(stream) {
+
+    const video = getOrCreatePresentationStage({
+        id: room.localParticipant.identity, label: "You"
+    });
+
+    video.srcObject = stream;
+
+}
+
+function renderRemoteScreenShare(identity, label, stream) {
+
+    const video = getOrCreatePresentationStage({
+        id: identity, label
+    });
+
+    video.srcObject = stream;
+
+}
+
+export async function switchCamera(deviceId) {
+
+    if (!room) {
+        return;
+    }
+
+    const track = await createLocalVideoTrack({
+        deviceId
+    });
+
+    const publication = getLocalCameraPublication();
+
+    const oldTrack = publication?.track;
+
+    if (oldTrack) {
+        await room.localParticipant.unpublishTrack(oldTrack);
+        oldTrack.stop();
+    }
+
+    await room.localParticipant.publishTrack(track);
+
+    const stream = new MediaStream([track.mediaStreamTrack]);
+
+    renderLocalVideo(stream);
+
+}
+
+export async function switchMicrophone(deviceId) {
+
+    if (!room) {
+        return;
+    }
+
+    const track = await createLocalAudioTrack({
+        deviceId
+    });
+
+    const publication = [...room.localParticipant.audioTrackPublications.values()][0];
+
+    const oldTrack = publication.track;
+
+    await room.localParticipant.unpublishTrack(oldTrack);
+
+    oldTrack.stop();
+
+    await room.localParticipant.publishTrack(track);
 
 }

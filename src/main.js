@@ -24,6 +24,8 @@ import {
     createNotificationCenter
 } from "./components/NotificationCenter/NotificationCenter.js";
 
+import "./features/participants/activeSpeakerUI.js";
+
 const root = document.getElementById("app");
 
 const authPage = createAuthPage();

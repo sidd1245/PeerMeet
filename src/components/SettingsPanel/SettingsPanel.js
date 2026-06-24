@@ -50,30 +50,35 @@ export function createSettingsPanel() {
 
         const devices = await navigator.mediaDevices.enumerateDevices();
 
-        fillSelect(
-            refs.microphone,
-            devices.filter(device => device.kind === "audioinput"),
-            "Default microphone"
-        );
-        fillSelect(
-            refs.camera,
-            devices.filter(device => device.kind === "videoinput"),
-            "Default camera"
-        );
-        fillSelect(
-            refs.speaker,
-            devices.filter(device => device.kind === "audiooutput"),
-            "Default speaker"
-        );
+        fillSelect(refs.microphone, devices.filter(device => device.kind === "audioinput"), "Default microphone");
+        fillSelect(refs.camera, devices.filter(device => device.kind === "videoinput"), "Default camera");
+        fillSelect(refs.speaker, devices.filter(device => device.kind === "audiooutput"), "Default speaker");
     }
 
+    const listeners = {
+        camera: null, microphone: null
+    };
+
+    refs.camera.addEventListener("change", event => {
+        listeners.camera?.(event.target.value);
+    });
+
+    refs.microphone.addEventListener("change", event => {
+        listeners.microphone?.(event.target.value);
+    });
+
     return {
-        element,
-        open: async () => {
+        element, open: async () => {
             await refreshDevices();
             element.showModal();
+        }, close: () => element.close(),
+        onCameraChanged: callback => {
+            listeners.camera = callback;
         },
-        close: () => element.close()
+
+        onMicrophoneChanged: callback => {
+            listeners.microphone = callback;
+        },
     };
 
 }

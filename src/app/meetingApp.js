@@ -1,5 +1,6 @@
 import {
-    connectRoom, toggleCamera, toggleMicrophone, toggleScreenShare, setScreenShareStoppedHandler
+    connectRoom, toggleCamera, toggleMicrophone, toggleScreenShare, setScreenShareStoppedHandler, switchCamera,
+    switchMicrophone
 } from "../features/livekit/roomConnection.js";
 
 import {
@@ -252,6 +253,18 @@ export function createMeetingApp({authPage, lobbyPage, preJoinPage, roomPage, no
 
         });
 
+        roomPage.onCameraChanged(async deviceId => {
+
+            await switchCamera(deviceId);
+
+        });
+
+        roomPage.onMicrophoneChanged(async deviceId => {
+
+            await switchMicrophone(deviceId);
+
+        });
+
         roomPage.onSendChat(sendChatMessage);
 
         roomPage.onLeave(() => {
@@ -361,7 +374,7 @@ export function createMeetingApp({authPage, lobbyPage, preJoinPage, roomPage, no
         lobbyPage.setRoomId(roomId);
         lobbyPage.setMeetingLink(getMeetingLink(roomId));
         roomPage.setCurrentRoom(roomId);
-        roomPage.setMeetingStatus("Live");
+        roomPage.setMeetingStatus("Live", "Live");
 
         setRoomId(roomId);
         authPage.hide();
@@ -370,7 +383,27 @@ export function createMeetingApp({authPage, lobbyPage, preJoinPage, roomPage, no
         roomPage.show();
 
         await connectRoom({
-            roomName: roomId, identity: localUser.id, name: localUser.name
+            roomName: roomId, identity: localUser.id, name: localUser.name, onReconnecting: () => {
+
+                notificationCenter.notify("Reconnecting...");
+
+                roomPage.setMeetingStatus("Reconnecting", "warning");
+
+            },
+
+            onReconnected: () => {
+
+                notificationCenter.notify("Connection restored");
+
+                roomPage.setMeetingStatus("Live", "Live");
+
+            },
+
+            onDisconnected: () => {
+
+                notificationCenter.notify("Connection lost", "error");
+
+            }
         });
 
         // await initializeLocalMedia();

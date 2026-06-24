@@ -66,3 +66,15 @@
         display: none;
     }
 }
+
+.status-pill.is-live {
+    background: #16a34a;
+}
+
+.status-pill.is-warning {
+    background: #d97706;
+}
+
+.status-pill.is-error {
+    background: #f44336;
+}

@@ -30,18 +30,17 @@ export function createTopBar() {
     };
 
     return {
-        element,
-        setRoomId: roomId => {
+        element, setRoomId: roomId => {
             refs.roomId.textContent = roomId || "None";
-        },
-        getRoomId: () => refs.roomId.textContent,
-        setStatus: status => {
+        }, getRoomId: () => refs.roomId.textContent, setStatus: (status, type="Live") => {
+
             refs.status.textContent = status;
-        },
-        setHostName: name => {
+
+            refs.status.className = `status-pill is-${type}`;
+
+        }, setHostName: name => {
             refs.hostName.textContent = name || "Unknown";
-        },
-        getHostName: () => refs.hostName.textContent,
+        }, getHostName: () => refs.hostName.textContent,
     };
 
 }

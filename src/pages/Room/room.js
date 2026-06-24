@@ -44,9 +44,10 @@ export function createRoomPage() {
     element.querySelector("#bottomControlsMount").appendChild(bottomControls.element);
     element.appendChild(settingsPanel.element);
 
+    ensurePresentationStage(element);
+
     const refs = {
-        sidePanel: element.querySelector("#sidePanel"),
-        presentingBanner: element.querySelector("#presentingBanner")
+        sidePanel: element.querySelector("#sidePanel"), presentingBanner: element.querySelector("#presentingBanner")
     };
 
     bindTabs(element, refs.sidePanel);
@@ -88,6 +89,8 @@ export function createRoomPage() {
         addChatMessage: chatPanel.addMessage,
         renderParticipants: participantPanel.render,
         renderActivity: activityPanel.render,
+        onCameraChanged: settingsPanel.onCameraChanged,
+        onMicrophoneChanged: settingsPanel.onMicrophoneChanged,
         log: activityPanel.log,
         showPresenting: message => {
             refs.presentingBanner.textContent = message;
@@ -95,14 +98,6 @@ export function createRoomPage() {
         },
         hidePresenting: () => {
             refs.presentingBanner.classList.add("is-hidden");
-            element.querySelectorAll(".video-tile").forEach(tile => {
-                tile.classList.remove("is-presenting");
-            });
-        },
-        setLocalPresenting: isPresenting => {
-            element
-                .querySelector("#localVideoTile")
-                ?.classList.toggle("is-presenting", isPresenting);
         },
         onSendChat: chatPanel.onSend,
         onLeave: bottomControls.onLeave,
@@ -138,5 +133,25 @@ function activatePanel(element, panel) {
     element.querySelectorAll("[data-panel-view]").forEach(view => {
         view.classList.toggle("is-active", view.dataset.panelView === panel);
     });
+
+}
+
+function ensurePresentationStage(element) {
+
+    if (element.querySelector("#presentationStage")) {
+        return;
+    }
+
+    const videoGrid = element.querySelector("#videoGrid");
+
+    if (!videoGrid) {
+        return;
+    }
+
+    const stage = document.createElement("div");
+    stage.id = "presentationStage";
+    stage.className = "presentation-stage is-hidden";
+
+    videoGrid.before(stage);
 
 }

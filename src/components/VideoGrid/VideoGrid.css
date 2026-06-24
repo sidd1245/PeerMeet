@@ -3,7 +3,7 @@
     height: 100%;
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-    grid-auto-rows: minmax(180px, 1fr);
+    grid-auto-rows: minmax(140px, 1fr);
     gap: 3px;
     padding: 3px;
 }
@@ -16,6 +16,34 @@
     background: #242529;
 }
 
+.avatar-placeholder {
+
+    position: absolute;
+    inset: 0;
+
+    display: none;
+
+    align-items: center;
+    justify-content: center;
+
+    font-size: 72px;
+    font-weight: 700;
+
+    color: white;
+    background: #1f2937;
+
+}
+
+.video-tile.camera-off video {
+    display: none;
+}
+
+.video-tile.camera-off .avatar-placeholder {
+
+    display: flex;
+
+}
+
 .video-tile video {
     display: block;
     width: 100%;
@@ -24,7 +52,8 @@
 }
 
 .video-tile.is-presenting {
-    box-shadow: inset 0 0 0 3px var(--blue-light);
+    grid-column: 1 / -1;
+    min-height: 500px;
 }
 
 .video-label {
@@ -47,4 +76,61 @@
     .video-grid {
         grid-template-columns: 1fr;
     }
+}
+
+.mic-indicator {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+
+    z-index: 1000;
+
+    background: red;
+    color: white;
+
+    padding: 6px;
+
+    display: none;
+}
+
+.video-tile.mic-muted .mic-indicator {
+    display: block !important;
+}
+
+.video-tile.speaking {
+    box-shadow: 0 0 0 4px #22c55e;
+}
+
+.presentation-stage {
+    flex: 3;
+    min-height: 0;
+    display: flex;
+    padding: 3px;
+}
+
+.presentation-stage.is-hidden {
+    display: none;
+}
+
+.stage-tile {
+    position: relative;
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+    border-radius: 6px;
+    background: #000000;
+}
+
+.stage-tile video {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    background: #000000;
+}
+
+.stage-tile .video-label {
+    position: absolute;
+    left: 10px;
+    bottom: 10px;
 }

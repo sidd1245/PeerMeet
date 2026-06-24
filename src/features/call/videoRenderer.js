@@ -1,6 +1,6 @@
 import {
     getOrCreateVideoTile,
-    removeVideoTile
+    removeVideoTile,
 } from "../../components/VideoGrid/VideoGrid.js";
 
 export function renderLocalVideo(stream) {
