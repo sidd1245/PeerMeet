@@ -2,7 +2,7 @@ import express from "express";
 import http from "http";
 import cors from "cors";
 import {Server} from "socket.io";
-
+import authRoutes from "./routes/authRoutes.js";
 import {setupSocket} from "./socket.js";
 import {createLiveKitToken} from "./livekit.js";
 
@@ -14,6 +14,8 @@ const app = express();
 
 app.use(express.json());
 app.use(cors());
+
+app.use("/api/auth", authRoutes);
 
 const server = http.createServer(app);
 
