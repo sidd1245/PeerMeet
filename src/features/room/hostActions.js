@@ -3,7 +3,7 @@ export function isHost(
 ) {
 
     return (
-        room.hostId ===
+        room.hostUserId ===
         room.mySocketId
     );
 

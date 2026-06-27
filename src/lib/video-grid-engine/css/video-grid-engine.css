@@ -1,0 +1,172 @@
+/**
+ * video-grid-engine.css
+ *
+ * This stylesheet does NOT lay anything out — VideoGridEngine already
+ * computed exact x/y/width/height for every tile in JavaScript. CSS's
+ * job here is just to:
+ *   1. Establish a positioning context for absolutely-positioned tiles.
+ *   2. Animate tiles smoothly when the engine recalculates (participant
+ *      joins/leaves, resize, mode switch) instead of popping instantly.
+ *   3. Provide baseline tile chrome (rounded corners, name labels,
+ *      speaking indicator, screen-share/pinned states) that's generic
+ *      enough for any video app to use or override.
+ *
+ * Usage: give your container `.vge-container`, give each video tile
+ * `.vge-tile`, and set each tile's inline style from
+ * `layout.positions[i]` (see usage examples). This file only supplies
+ * the class-level styling.
+ */
+
+.vge-container {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: var(--vge-bg, #0b0d10);
+  /* Establish containment so absolutely-positioned children never
+     bleed outside, even mid-transition during a resize. */
+  contain: layout paint size;
+}
+
+/* Filmstrip / overflowing-strip containers need real scrolling, not
+   clipping — toggle this class when layout.isOverflowing is true. */
+.vge-container--scrollable {
+  overflow: auto;
+  contain: layout paint;
+}
+
+.vge-tile {
+  position: absolute;
+  top: 0;
+  left: 0;
+  border-radius: var(--vge-tile-radius, 12px);
+  overflow: hidden;
+  background: var(--vge-tile-bg, #1c1f24);
+  box-shadow: var(--vge-tile-shadow, 0 1px 3px rgba(0, 0, 0, 0.4));
+
+  /* The engine recalculates x/y/width/height as plain numbers; we apply
+     them via CSS custom properties (set inline by your render layer)
+     and transition all four so tiles glide into their new slot rather
+     than snapping — this is what prevents the layout from feeling like
+     it's "thrashing" even though, mathematically, it's a fresh
+     calculation on every resize/participant-count change. */
+  transform: translate(var(--vge-x, 0px), var(--vge-y, 0px));
+  width: var(--vge-w, 0px);
+  height: var(--vge-h, 0px);
+  transition:
+    transform var(--vge-transition-duration, 240ms) var(--vge-transition-easing, cubic-bezier(0.4, 0, 0.2, 1)),
+    width var(--vge-transition-duration, 240ms) var(--vge-transition-easing, cubic-bezier(0.4, 0, 0.2, 1)),
+    height var(--vge-transition-duration, 240ms) var(--vge-transition-easing, cubic-bezier(0.4, 0, 0.2, 1));
+  will-change: transform, width, height;
+}
+
+/* Disable the glide animation for the very first paint (e.g. on initial
+   join) by toggling this class off after layout settles, or respect
+   reduced-motion preferences. */
+@media (prefers-reduced-motion: reduce) {
+  .vge-tile {
+    transition: none;
+  }
+}
+.vge-tile--no-transition {
+  transition: none;
+}
+
+.vge-tile video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  background: #000;
+}
+
+/* --- Tile state modifiers --- */
+
+.vge-tile--main {
+  /* The large speaker/presentation tile. Slightly stronger shadow to
+     visually separate it from the thumbnail strip. */
+  box-shadow: var(--vge-tile-main-shadow, 0 4px 16px rgba(0, 0, 0, 0.5));
+  z-index: 1;
+}
+
+.vge-tile--speaking {
+  box-shadow: 0 0 0 var(--vge-speaking-ring-width, 3px) var(--vge-speaking-ring-color, #34d399);
+}
+
+.vge-tile--pinned::after {
+  content: '';
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--vge-pin-indicator-color, #fbbf24);
+}
+
+.vge-tile--screen-share {
+  /* Screen shares are usually NOT 16:9 webcam content; letterbox instead
+     of cropping by default. Override object-fit on the inner element if
+     your app prefers cropping. */
+}
+.vge-tile--screen-share video {
+  object-fit: contain;
+  background: #000;
+}
+
+.vge-tile-label {
+  position: absolute;
+  left: 8px;
+  bottom: 8px;
+  padding: 2px 8px;
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.55);
+  color: #fff;
+  font-size: 12px;
+  font-family: system-ui, -apple-system, sans-serif;
+  line-height: 1.4;
+  pointer-events: none;
+  max-width: calc(100% - 16px);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* --- Filmstrip-specific chrome --- */
+
+.vge-container--filmstrip-bottom {
+  /* If you render the main stage and filmstrip as two separate DOM
+     regions instead of one absolutely-positioned container (also a
+     valid approach — the engine returns the numbers either way), this
+     gives the strip its own scroll affordance. */
+  display: flex;
+  flex-direction: column;
+}
+
+.vge-filmstrip-track {
+  position: relative;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: thin;
+  -webkit-overflow-scrolling: touch;
+}
+.vge-filmstrip-track::-webkit-scrollbar {
+  height: 6px;
+}
+.vge-filmstrip-track::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.25);
+  border-radius: 3px;
+}
+
+/* --- Empty-state placeholder, shown when a tile has no video yet --- */
+
+.vge-tile--no-video {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--vge-avatar-fg, #8b8f96);
+  font-size: 28px;
+  font-weight: 600;
+  font-family: system-ui, -apple-system, sans-serif;
+  background: var(--vge-avatar-bg, #2a2d33);
+}

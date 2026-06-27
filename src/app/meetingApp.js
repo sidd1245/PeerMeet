@@ -1,14 +1,20 @@
 import {
-    connectRoom, toggleCamera, toggleMicrophone, toggleScreenShare, setScreenShareStoppedHandler, switchCamera,
-    switchMicrophone
+    connectRoom,
+    toggleCamera,
+    toggleMicrophone,
+    toggleScreenShare,
+    setScreenShareStoppedHandler,
+    switchCamera,
+    switchMicrophone,
+    disconnectRoom
 } from "../features/livekit/roomConnection.js";
 
 import {
-    saveUser, getUser
+    saveUser, getUser, saveToken, getToken, removeToken, removeUser
 } from "../services/storage.js";
 
 import {
-    socket
+    socket, connectSocket
 } from "../services/socket.js";
 
 import {
@@ -38,6 +44,8 @@ import {
 import {
     getParticipants
 } from "../features/participants/participantState.js";
+import {login, register} from "../services/authApi.js";
+import {getMeetingHistory} from "../services/meetingApi.js";
 
 export function createMeetingApp({authPage, lobbyPage, preJoinPage, roomPage, notificationCenter}) {
 
@@ -49,38 +57,41 @@ export function createMeetingApp({authPage, lobbyPage, preJoinPage, roomPage, no
     let pendingMediaPreferences = {
         audioEnabled: true, videoEnabled: true
     };
+    let currentRoom = null;
 
-    function init() {
-
-        const params = new URLSearchParams(window.location.search);
-        const roomFromUrl = params.get("room");
-
-        authPage.hide();
-        lobbyPage.hide();
-        preJoinPage.hide();
-        roomPage.hide();
-
-        if (roomFromUrl) {
-            lobbyPage.setRoomId(roomFromUrl);
-        }
-
-        if (localUser?.name) {
-            authPage.setName(localUser.name);
-            authPage.setEmail(localUser.email);
-            lobbyPage.setUserName(localUser.name);
-            showLobby();
-        } else {
-            authPage.show();
-        }
-
-        lobbyPage.setMeetingLink(getMeetingLink(lobbyPage.getRoomId()));
-        roomPage.showEmptyStates();
+    async function init() {
 
         bindSocketEvents();
         bindAuthEvents();
         bindLobbyEvents();
         bindPreJoinEvents();
         bindRoomEvents();
+        const params = new URLSearchParams(window.location.search);
+
+        const roomFromUrl = params.get("room");
+        authPage.hide();
+        lobbyPage.hide();
+        preJoinPage.hide();
+
+        roomPage.hide();
+        if (roomFromUrl) {
+            lobbyPage.setRoomId(roomFromUrl);
+
+        }
+        if (localUser?.name) {
+            authPage.setEmail(localUser.email);
+            lobbyPage.setUser(localUser);
+            const history = await getMeetingHistory(localUser.id);
+            lobbyPage.renderMeetingHistory(history);
+            connectSocket();
+            showLobby();
+        } else {
+            authPage.show();
+
+        }
+        preJoinPage.setMeetingLink(getMeetingLink(lobbyPage.getRoomId()));
+
+        roomPage.showEmptyStates();
 
     }
 
@@ -92,7 +103,17 @@ export function createMeetingApp({authPage, lobbyPage, preJoinPage, roomPage, no
             roomPage.log("Connected to backend");
         });
 
+        socket.on("connect_error", error => {
+            //console.error(error);
+            lobbyPage.setStatus("Connection failed", "error");
+        });
+
+        socket.on("disconnect", () => {
+            lobbyPage.setStatus("Disconnected", "warning");
+        });
+
         socket.on("room-updated", room => {
+            //console.log(room);
             handleRoomUpdated(room);
         });
 
@@ -118,10 +139,12 @@ export function createMeetingApp({authPage, lobbyPage, preJoinPage, roomPage, no
             renderActivity();
         });
 
-        socket.on("meeting-ended", () => {
+        socket.on("meeting-ended", async () => {
+            await disconnectRoom(); // Leave LiveKit cleanly
             localStorage.removeItem("currentRoom");
-            alert("Meeting ended by host");
-            location.reload();
+            roomPage.hide();
+            lobbyPage.show();
+            notificationCenter.notify("Meeting ended because the host left.");
         });
 
         socket.on("force-mute", async () => {
@@ -148,37 +171,53 @@ export function createMeetingApp({authPage, lobbyPage, preJoinPage, roomPage, no
 
     function bindAuthEvents() {
 
-        authPage.onSignIn(() => {
-            const profile = authPage.getProfile();
+        authPage.onSignIn(async () => {
 
-            if (!profile.name) {
-                authPage.focusName();
-                return;
+            try {
+
+                const profile = authPage.getProfile();
+
+                const response = await login(profile.email, profile.password);
+
+                saveToken(response.token);
+
+                saveUser(response.user);
+
+                localUser = response.user;
+
+                connectSocket();
+
+                lobbyPage.setUser(localUser);
+
+                notificationCenter.notify(`Welcome ${localUser.name}`);
+
+                showLobby();
+
+            } catch (error) {
+
+                notificationCenter.notify(error.message, "error");
+
             }
 
-            localUser = {
-                id: localUser?.id || crypto.randomUUID(), ...profile
-            };
-
-            saveUser(localUser);
-            lobbyPage.setUserName(localUser.name);
-            notificationCenter.notify(`Signed in as ${localUser.name}`);
-            showLobby();
         });
 
-        authPage.onGuest(() => {
-            const profile = authPage.getGuestProfile();
+        authPage.onRegister(async () => {
 
-            localUser = {
-                id: localUser?.id || crypto.randomUUID(), ...profile
-            };
+            try {
 
-            saveUser(localUser);
-            lobbyPage.setUserName(localUser.name);
-            notificationCenter.notify(`Continuing as ${localUser.name}`);
-            showLobby();
+                const profile = authPage.getProfile();
+
+                await register(profile);
+
+                notificationCenter.notify("Registration successful. Please sign in.");
+
+            } catch (error) {
+
+                notificationCenter.notify(error.message, "error");
+
+            }
+
         });
-
     }
 
     function bindLobbyEvents() {
@@ -207,7 +246,7 @@ export function createMeetingApp({authPage, lobbyPage, preJoinPage, roomPage, no
             await openPreJoin(roomId, `Joined room ${roomId}`);
         });
 
-        lobbyPage.onCopyLink(async () => {
+        preJoinPage.onCopyLink(async () => {
             const roomId = roomPage.getCurrentRoom() === "None" ? lobbyPage.getRoomId() : roomPage.getCurrentRoom();
 
             if (!roomId || roomId === "None") {
@@ -215,11 +254,21 @@ export function createMeetingApp({authPage, lobbyPage, preJoinPage, roomPage, no
             }
 
             await navigator.clipboard.writeText(getMeetingLink(roomId));
-            lobbyPage.markLinkCopied();
+            preJoinPage.markLinkCopied();
         });
 
         lobbyPage.onRoomInput(() => {
-            lobbyPage.setMeetingLink(getMeetingLink(lobbyPage.getRoomId()));
+            preJoinPage.setMeetingLink(getMeetingLink(lobbyPage.getRoomId()));
+        });
+
+        lobbyPage.onLogout(() => {
+            socket.disconnect();
+            removeToken();
+            removeUser();
+            localUser = null;
+            authPage.clear();
+            lobbyPage.hide();
+            authPage.show();
         });
 
     }
@@ -228,13 +277,6 @@ export function createMeetingApp({authPage, lobbyPage, preJoinPage, roomPage, no
 
         preJoinPage.onJoinNow(async () => {
             await confirmJoin();
-        });
-
-        preJoinPage.onAskToJoin(async () => {
-            notificationCenter.notify("Request sent. Demo mode admits guests automatically.");
-            setTimeout(() => {
-                confirmJoin();
-            }, 700);
         });
 
         preJoinPage.onBack(() => {
@@ -277,6 +319,22 @@ export function createMeetingApp({authPage, lobbyPage, preJoinPage, roomPage, no
 
         roomPage.onMuteAll(() => {
             socket.emit("mute-all", roomPage.getCurrentRoom());
+        });
+
+        roomPage.onLockRoom(() => {
+            if (!currentRoom) {
+                return;
+            }
+            const roomId = roomPage.getCurrentRoom();
+            if (currentRoom.locked) {
+                socket.emit("unlock-room", {
+                    roomId
+                });
+            } else {
+                socket.emit("lock-room", {
+                    roomId
+                });
+            }
         });
 
         roomPage.onToggleMicrophone(async () => {
@@ -324,7 +382,7 @@ export function createMeetingApp({authPage, lobbyPage, preJoinPage, roomPage, no
             handRaised = !handRaised;
 
             socket.emit(handRaised ? "raise-hand" : "lower-hand", {
-                roomId: roomPage.getCurrentRoom(), userId: localUser.id
+                roomId: roomPage.getCurrentRoom()
             });
 
             roomPage.setHandRaised(handRaised);
@@ -338,9 +396,9 @@ export function createMeetingApp({authPage, lobbyPage, preJoinPage, roomPage, no
         pendingActivityMessage = activityMessage;
 
         lobbyPage.setRoomId(roomId);
-        lobbyPage.setMeetingLink(getMeetingLink(roomId));
+        preJoinPage.setMeetingLink(getMeetingLink(roomId));
         preJoinPage.setRoomId(roomId);
-        preJoinPage.setProfile(localUser);
+        preJoinPage.setUser(localUser);
 
         lobbyPage.hide();
         await preJoinPage.show();
@@ -348,94 +406,82 @@ export function createMeetingApp({authPage, lobbyPage, preJoinPage, roomPage, no
     }
 
     async function confirmJoin() {
-
-        const displayName = preJoinPage.getName();
-
-        if (!displayName) {
-            notificationCenter.notify("Enter a display name before joining.");
+        preJoinPage.setUser(localUser);
+        pendingMediaPreferences = preJoinPage.getPreferences();
+        const joined = await enterRoom(
+            pendingRoomId,
+            pendingActivityMessage
+        );
+        if (!joined) {
             return;
         }
-
-        localUser = {
-            ...localUser, name: displayName
-        };
-
-        saveUser(localUser);
-        lobbyPage.setUserName(localUser.name);
-        pendingMediaPreferences = preJoinPage.getPreferences();
-
-        preJoinPage.hide();
-        await enterRoom(pendingRoomId, pendingActivityMessage);
-
-    }
-
-    async function enterRoom(roomId, activityMessage) {
-
-        lobbyPage.setRoomId(roomId);
-        lobbyPage.setMeetingLink(getMeetingLink(roomId));
-        roomPage.setCurrentRoom(roomId);
-        roomPage.setMeetingStatus("Live", "Live");
-
-        setRoomId(roomId);
         authPage.hide();
         lobbyPage.hide();
         preJoinPage.hide();
         roomPage.show();
+    }
+
+    async function enterRoom(roomId, activityMessage) {
+        lobbyPage.setRoomId(roomId);
+        preJoinPage.setMeetingLink(getMeetingLink(roomId));
+        roomPage.setCurrentRoom(roomId);
+        roomPage.setMeetingStatus("Connecting...", "warning");
+        setRoomId(roomId);
+        if (!socket.connected) {
+            await new Promise(resolve => {
+                socket.once("connect", resolve);
+            });
+        }
+        try{
+            await new Promise((resolve, reject) => {
+                socket.once("join-approved", resolve);
+                socket.once("join-denied", data => {
+                    reject(new Error(data.reason));
+                });
+                socket.emit("join-room", {
+                    roomId
+                });
+            });
+        }catch(error){
+            notificationCenter.notify(error.message, "error");
+            return false;
+        }
 
         await connectRoom({
-            roomName: roomId, identity: localUser.id, name: localUser.name, onReconnecting: () => {
-
+            roomName: roomId,
+            identity: localUser.id,
+            name: localUser.name,
+            onReconnecting: () => {
                 notificationCenter.notify("Reconnecting...");
-
                 roomPage.setMeetingStatus("Reconnecting", "warning");
-
             },
-
             onReconnected: () => {
-
                 notificationCenter.notify("Connection restored");
-
                 roomPage.setMeetingStatus("Live", "Live");
-
             },
-
             onDisconnected: () => {
-
                 notificationCenter.notify("Connection lost", "error");
-
             }
         });
-
-        // await initializeLocalMedia();
-
         await applyInitialMediaPreferences();
-
-        socket.emit("join-room", {
-            roomId, user: localUser
-        });
-
+        roomPage.setMeetingStatus("Live", "Live");
         pushActivity(activityMessage);
         renderActivity();
-
+        return true;
     }
 
     function handleRoomUpdated(room) {
-
+        currentRoom = room;
         const {
-            hostId, participants
+            hostId, participants, locked
         } = room;
-
         updateParticipants(participants);
-        // closeDisconnectedCalls(participants);
-
-        const host = participants.find(participant => participant.socketId === hostId);
-
+        const host = participants.find(participant => participant.user.id === hostId);
         if (host) {
             roomPage.setHostName(host.user.name);
         }
-
-        roomPage.setHostControlsVisible(mySocketId === hostId);
-
+        roomPage.setHostControlsVisible(localUser.id === hostId);
+        roomPage.setRoomLocked(locked);
     }
 
     function updateParticipants(participants) {
@@ -512,10 +558,7 @@ export function createMeetingApp({authPage, lobbyPage, preJoinPage, roomPage, no
         updateMediaStatus(localUser.id, false, current.videoEnabled);
 
         socket.emit("media-status-changed", {
-            roomId: roomPage.getCurrentRoom(),
-            userId: localUser.id,
-            audioEnabled: false,
-            videoEnabled: current.videoEnabled
+            roomId: roomPage.getCurrentRoom(), audioEnabled: false, videoEnabled: current.videoEnabled
         });
 
         roomPage.setMuteState(false);
@@ -535,7 +578,7 @@ export function createMeetingApp({authPage, lobbyPage, preJoinPage, roomPage, no
         updateMediaStatus(localUser.id, audioEnabled, videoEnabled);
 
         socket.emit("media-status-changed", {
-            roomId: roomPage.getCurrentRoom(), userId: localUser.id, audioEnabled, videoEnabled
+            roomId: roomPage.getCurrentRoom(), audioEnabled, videoEnabled
         });
 
         renderParticipants();
@@ -566,21 +609,7 @@ export function createMeetingApp({authPage, lobbyPage, preJoinPage, roomPage, no
     }
 
     function ensureUserReady() {
-
-        const name = lobbyPage.getUserName();
-
-        if (!name) {
-            lobbyPage.focusUserName();
-            return false;
-        }
-
-        localUser = {
-            id: localUser?.id || crypto.randomUUID(), name
-        };
-
-        saveUser(localUser);
-        return true;
-
+        return !!localUser?.name;
     }
 
     function showLobby() {

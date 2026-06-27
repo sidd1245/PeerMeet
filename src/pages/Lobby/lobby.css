@@ -11,7 +11,7 @@
 }
 
 .lobby-header {
-    width: min(100%, 980px);
+    width: min(100%, 750px);
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -56,10 +56,9 @@
 }
 
 .lobby-layout {
-    width: min(100%, 980px);
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(360px, 420px);
-    gap: 64px;
+    width: 100%;
+    display: flex;
+    justify-content: center;
     align-items: center;
 }
 
@@ -103,6 +102,7 @@
 }
 
 .lobby-card {
+    width: min(100%, 750px);
     display: grid;
     gap: 16px;
     border: 1px solid var(--border);
@@ -123,15 +123,6 @@
     .lobby-page {
         justify-content: flex-start;
     }
-
-    .lobby-layout {
-        grid-template-columns: 1fr;
-        gap: 32px;
-    }
-
-    .lobby-intro h2 {
-        font-size: 38px;
-    }
 }
 
 @media (max-width: 560px) {
@@ -148,4 +139,10 @@
     .join-row {
         grid-template-columns: 1fr;
     }
+}
+.meeting-history-scroll {
+    max-height: 260px;
+    overflow-y: auto;
+    margin-top: 8px;
+    padding-right: 6px;
 }

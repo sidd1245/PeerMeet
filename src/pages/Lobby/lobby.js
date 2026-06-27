@@ -1,8 +1,8 @@
 import template from "./lobby.html?raw";
-
 import {
-    createMeetingInfo
-} from "../../components/MeetingInfo/MeetingInfo.js";
+    createMeetingHistory
+} from "../../components/MeetingHistory/MeetingHistory.js";
+
 
 export function createLobbyPage() {
 
@@ -10,20 +10,19 @@ export function createLobbyPage() {
     host.innerHTML = template.trim();
 
     const element = host.firstElementChild;
-    const meetingInfo = createMeetingInfo();
-
-    element
-        .querySelector("#meetingInfoMount")
-        .appendChild(meetingInfo.element);
+    const meetingHistory = createMeetingHistory();
 
     const refs = {
         status: element.querySelector("#appStatus"),
-        userNameInput: element.querySelector("#userNameInput"),
         roomInput: element.querySelector("#roomInput"),
         createRoomBtn: element.querySelector("#createRoomBtn"),
-        joinRoomBtn: element.querySelector("#joinRoomBtn")
+        joinRoomBtn: element.querySelector("#joinRoomBtn"),
+        signedInName: element.querySelector("#signedInName"),
+        signedInEmail: element.querySelector("#signedInEmail"),
+        logoutBtn: element.querySelector("#logoutBtn"),
+        meetingHistoryMount: element.querySelector("#meetingHistoryMount")
     };
-
+    refs.meetingHistoryMount.appendChild(meetingHistory.element);
     return {
         element,
         show: () => element.classList.remove("is-hidden"),
@@ -32,22 +31,20 @@ export function createLobbyPage() {
             refs.status.textContent = label;
             refs.status.dataset.state = state;
         },
-        getUserName: () => refs.userNameInput.value.trim(),
-        setUserName: name => {
-            refs.userNameInput.value = name;
+        setUser(user) {
+            refs.signedInName.textContent = user.name;
+            refs.signedInEmail.textContent = user.email;
         },
-        focusUserName: () => refs.userNameInput.focus(),
         getRoomId: () => refs.roomInput.value.trim(),
         setRoomId: roomId => {
             refs.roomInput.value = roomId;
         },
         focusRoomInput: () => refs.roomInput.focus(),
-        setMeetingLink: meetingInfo.setLink,
-        markLinkCopied: meetingInfo.markCopied,
         onCreate: handler => refs.createRoomBtn.addEventListener("click", handler),
         onJoin: handler => refs.joinRoomBtn.addEventListener("click", handler),
-        onCopyLink: meetingInfo.onCopy,
-        onRoomInput: handler => refs.roomInput.addEventListener("input", handler)
+        onLogout: handler => refs.logoutBtn.addEventListener("click", handler),
+        onRoomInput: handler => refs.roomInput.addEventListener("input", handler),
+        renderMeetingHistory: meetingHistory.render
     };
 
 }

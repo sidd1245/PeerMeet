@@ -36,7 +36,7 @@ export async function connectRoom({
 
     const data = await response.json();
 
-    console.log("LiveKit token response:", data);
+    //console.log("LiveKit token response:", data);
 
     const {
         token, url
@@ -46,7 +46,7 @@ export async function connectRoom({
 
     room.on(RoomEvent.LocalTrackPublished, publication => {
 
-        console.log("LOCAL TRACK PUBLISHED:", publication.kind);
+        //console.log("LOCAL TRACK PUBLISHED:", publication.kind);
 
         if (publication.source !== "screen_share" || !publication.track) {
             return;
@@ -71,11 +71,11 @@ export async function connectRoom({
     });
 
     room.on("connected", () => {
-        console.log("LIVEKIT CONNECTED");
+        //console.log("LIVEKIT CONNECTED");
     });
 
     room.on("disconnected", () => {
-        console.log("LIVEKIT DISCONNECTED");
+        //console.log("LIVEKIT DISCONNECTED");
     });
 
     room.on(RoomEvent.ConnectionStateChanged, state => {
@@ -99,19 +99,19 @@ export async function connectRoom({
         }
     });
 
-    console.log("Connecting to:", url);
-    console.log("Room:", roomName);
-    console.log("Identity:", identity);
+    // console.log("Connecting to:", url);
+    // console.log("Room:", roomName);
+    // console.log("Identity:", identity);
 
     room.on(RoomEvent.ParticipantConnected, participant => {
 
-        console.log("Participant connected:", participant.identity);
+        // console.log("Participant connected:", participant.identity);
 
     });
 
     room.on(RoomEvent.TrackSubscribed, (track, publication, participant) => {
 
-        console.log("SUBSCRIBED", publication.source, track.kind, participant.identity);
+        // console.log("SUBSCRIBED", publication.source, track.kind, participant.identity);
 
         if (participant.identity === room.localParticipant.identity) {
             return;
@@ -137,7 +137,7 @@ export async function connectRoom({
 
     room.on(RoomEvent.TrackUnsubscribed, (track, publication, participant) => {
 
-        console.log("UNSUBSCRIBED", track.kind, publication.source, participant.identity);
+        // console.log("UNSUBSCRIBED", track.kind, publication.source, participant.identity);
 
         if (publication.source === "screen_share") {
 
@@ -210,15 +210,15 @@ export async function connectRoom({
         renderLocalVideo(localStream);
 
     }
-    console.log("Camera and microphone published");
+    // console.log("Camera and microphone published");
 
     room.remoteParticipants.forEach(participant => {
 
-        console.log("Existing participant:", participant.identity);
+        //console.log("Existing participant:", participant.identity);
 
         participant.trackPublications.forEach(publication => {
 
-            console.log("Existing publication:", publication.kind, publication.isSubscribed);
+            //console.log("Existing publication:", publication.kind, publication.isSubscribed);
 
         });
 
@@ -227,7 +227,7 @@ export async function connectRoom({
     room.on(RoomEvent.ActiveSpeakersChanged, speakers => {
 
         if (speakers.length > 0) {
-            console.log("Active speaker:", speakers[0]?.identity);
+            //console.log("Active speaker:", speakers[0]?.identity);
             setActiveSpeaker(speakers[0].identity);
         } else {
             setActiveSpeaker(null);
@@ -235,7 +235,7 @@ export async function connectRoom({
 
     });
 
-    console.log("Remote participants after join:", room.remoteParticipants.size);
+    //console.log("Remote participants after join:", room.remoteParticipants.size);
 
     return room;
 }

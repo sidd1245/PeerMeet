@@ -1,0 +1,36 @@
+{
+  "name": "video-grid-engine",
+  "version": "1.0.0",
+  "description": "Framework-agnostic layout engine for video conferencing grids — computes optimal tile geometry, decoupled from rendering.",
+  "type": "module",
+  "main": "src/index.js",
+  "module": "src/index.js",
+  "types": "src/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./src/index.d.ts",
+      "import": "./src/index.js"
+    },
+    "./css": "./css/video-grid-engine.css"
+  },
+  "files": [
+    "src",
+    "css",
+    "README.md"
+  ],
+  "sideEffects": false,
+  "keywords": [
+    "video",
+    "grid",
+    "layout",
+    "webrtc",
+    "livekit",
+    "video-conferencing",
+    "zoom",
+    "google-meet"
+  ],
+  "license": "MIT",
+  "engines": {
+    "node": ">=16"
+  }
+}

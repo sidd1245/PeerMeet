@@ -1,4 +1,7 @@
 import template from "./prejoin.html?raw";
+import {
+    createMeetingInfo
+} from "../../components/MeetingInfo/MeetingInfo.js";
 
 export function createPreJoinPage() {
 
@@ -6,17 +9,22 @@ export function createPreJoinPage() {
     host.innerHTML = template.trim();
 
     const element = host.firstElementChild;
+    const meetingInfo = createMeetingInfo();
     const refs = {
         video: element.querySelector("#preJoinVideo"),
         roomId: element.querySelector("#preJoinRoomId"),
         identity: element.querySelector("#preJoinIdentity"),
-        name: element.querySelector("#preJoinNameInput"),
+        userName: element.querySelector("#preJoinUserName"),
         mic: element.querySelector("#previewMicBtn"),
         camera: element.querySelector("#previewCameraBtn"),
         join: element.querySelector("#joinNowBtn"),
         ask: element.querySelector("#askToJoinBtn"),
         back: element.querySelector("#backToLobbyBtn")
     };
+
+    element
+        .querySelector("#meetingInfoMount")
+        .appendChild(meetingInfo.element);
 
     let previewStream = null;
     let audioEnabled = true;
@@ -76,21 +84,18 @@ export function createPreJoinPage() {
         setRoomId: roomId => {
             refs.roomId.textContent = roomId || "None";
         },
-        setProfile: profile => {
-            refs.name.value = profile?.name || "";
-            refs.identity.textContent = profile?.authType === "guest"
-                ? "Joining as guest"
-                : `Signed in as ${profile?.email || profile?.name || "PeerMeet user"}`;
-            refs.ask.classList.toggle("is-hidden", profile?.authType !== "guest");
+        setUser: user => {
+            refs.userName.textContent = user?.name || "";
         },
-        getName: () => refs.name.value.trim(),
         getPreferences: () => ({
             audioEnabled,
             videoEnabled
         }),
         onJoinNow: handler => refs.join.addEventListener("click", handler),
-        onAskToJoin: handler => refs.ask.addEventListener("click", handler),
-        onBack: handler => refs.back.addEventListener("click", handler)
+        onBack: handler => refs.back.addEventListener("click", handler),
+        setMeetingLink: meetingInfo.setLink,
+        markLinkCopied: meetingInfo.markCopied,
+        onCopyLink: meetingInfo.onCopy,
     };
 
 }

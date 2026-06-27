@@ -5,7 +5,7 @@ import {Server} from "socket.io";
 import authRoutes from "./routes/authRoutes.js";
 import {setupSocket} from "./socket.js";
 import {createLiveKitToken} from "./livekit.js";
-
+import meetingRoutes from "./routes/meetingRoutes.js";
 import dotenv from "dotenv";
 
 dotenv.config();
@@ -16,7 +16,7 @@ app.use(express.json());
 app.use(cors());
 
 app.use("/api/auth", authRoutes);
-
+app.use("/api/meetings", meetingRoutes);
 const server = http.createServer(app);
 
 const io = new Server(server, {

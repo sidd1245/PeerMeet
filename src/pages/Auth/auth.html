@@ -21,13 +21,13 @@
         </section>
 
         <section class="auth-card">
-            <div class="field-group">
+            <div class="field-group register-only">
                 <label for="authNameInput">Display name</label>
                 <input
                         id="authNameInput"
                         class="text-input"
                         autocomplete="name"
-                        placeholder="Your name"
+                        placeholder="required only for new accounts"
                 >
             </div>
 
@@ -42,6 +42,17 @@
                 >
             </div>
 
+            <div class="field-group">
+                <label for="authPasswordInput">Password</label>
+                <input
+                        id="authPasswordInput"
+                        class="text-input"
+                        type="password"
+                        autocomplete="current-password"
+                        placeholder="Password"
+                >
+            </div>
+
             <button
                     id="signInBtn"
                     class="btn btn-primary btn-full"
@@ -49,16 +60,13 @@
                 Sign in
             </button>
 
-            <div class="divider">
-                <span>or</span>
-            </div>
-
             <button
-                    id="guestBtn"
+                    id="registerBtn"
                     class="btn btn-secondary btn-full"
             >
-                Continue as guest
+                Create account
             </button>
+
         </section>
     </main>
 </section>

@@ -20,8 +20,15 @@
     margin: 0 auto;
 }
 
-.preview-card,
+.preview-card{
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    background: var(--surface);
+    box-shadow: var(--shadow-lg);
+}
+
 .join-card {
+    width: fit-content;
     border: 1px solid var(--border);
     border-radius: var(--radius-lg);
     background: var(--surface);

@@ -1,43 +1,55 @@
-import bcrypt from "bcrypt";
-import { prisma } from "../db/prisma.js";
+import {registerUser, loginUser} from "../services/authService.js";
 
 export async function register(req, res) {
 
-    const { name, email, password } = req.body;
+    try {
 
-    if (!name || !email || !password) {
+        const user = await registerUser(req.body);
+
+        return res.status(201).json({
+            success: true, message: "User created successfully", user: {
+                id: user.id, name: user.name, email: user.email
+            }
+        });
+
+    } catch (error) {
+
         return res.status(400).json({
-            success: false,
-            message: "All fields are required"
+            success: false, message: error.message
         });
+
     }
 
-    const hashedPassword = await bcrypt.hash(password, 10);
-    console.log(hashedPassword);
+}
 
-    const existingUser = await prisma.user.findUnique({
-        where: {
-            email: email
-        }
-    });
-    if (existingUser) {
-        return res.status(409).json({
-            success: false,
-            message: "Email already registered"
+export async function login(req, res) {
+
+    try {
+
+        const {email, password} = req.body;
+
+        const {user, token} = await loginUser(email, password);
+
+        return res.json({
+            success: true, message: "Login successful", token, user: {
+                id: user.id, name: user.name, email: user.email
+            }
         });
+
+    } catch (error) {
+
+        return res.status(401).json({
+            success: false, message: error.message
+        });
+
     }
 
-    await prisma.user.create({
-        data: {
-            name,
-            email,
-            passwordHash: hashedPassword
-        }
-    });
+}
 
-    return res.status(201).json({
-        success: true,
-        message: "User created"
+export async function getCurrentUser(req, res) {
+
+    return res.json({
+        success: true, user: req.user
     });
 
 }

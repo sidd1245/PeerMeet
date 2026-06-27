@@ -13,4 +13,20 @@ model User {
   passwordHash String
   name         String
   createdAt    DateTime @default(now())
+
+  meetings     Meeting[] @relation("HostedMeetings")
+}
+
+model Meeting {
+  id               String   @id @default(cuid())
+  roomId           String   @unique
+  hostId           String
+  title            String?
+  startedAt        DateTime @default(now())
+  endedAt          DateTime?
+  durationSeconds  Int?
+  participantCount Int      @default(0)
+  createdAt        DateTime @default(now())
+
+  host             User @relation("HostedMeetings", fields: [hostId], references: [id])
 }

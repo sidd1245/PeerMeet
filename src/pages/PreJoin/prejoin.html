@@ -44,15 +44,16 @@
         <section class="join-card">
             <span class="section-label">Joining meeting</span>
             <h2 id="preJoinRoomId">None</h2>
-            <p id="preJoinIdentity">Signed in as Guest</p>
+            <div id="meetingInfoMount"></div>
+            <p id="preJoinIdentity">Signed in</p>
 
-            <div class="field-group">
-                <label for="preJoinNameInput">Display name</label>
-                <input
-                        id="preJoinNameInput"
-                        class="text-input"
-                        placeholder="Your name"
-                >
+            <div class="joining-user">
+    <span class="section-label">
+        Joining as
+    </span>
+
+                <h3 id="preJoinUserName"></h3>
+
             </div>
 
             <div class="prejoin-actions">
@@ -61,12 +62,6 @@
                         class="btn btn-primary btn-full"
                 >
                     Join now
-                </button>
-                <button
-                        id="askToJoinBtn"
-                        class="btn btn-secondary btn-full"
-                >
-                    Ask to join as guest
                 </button>
                 <button
                         id="backToLobbyBtn"

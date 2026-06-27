@@ -9,9 +9,11 @@
   "dependencies": {
     "@prisma/client": "^6.19.3",
     "bcrypt": "^6.0.0",
+    "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
     "dotenv": "^17.4.2",
     "express": "^4.21.2",
+    "jsonwebtoken": "^9.0.3",
     "livekit-server-sdk": "^2.15.5",
     "prisma": "^6.19.3",
     "socket.io": "^4.8.1"

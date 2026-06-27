@@ -6,8 +6,7 @@
         <div class="brand-mark">
             <span class="brand-icon">P</span>
             <div>
-                    <h1>PeerMeet</h1>
-                <p>Secure video meetings with chat, screen sharing, and host controls.</p>
+                <h1>PeerMeet</h1>
             </div>
         </div>
         <div
@@ -20,39 +19,17 @@
     </header>
 
     <main class="lobby-layout">
-        <section class="lobby-intro">
-            <p class="eyebrow">Video meetings</p>
-            <h2>Connect with your team, instantly.</h2>
-            <p>
-                Start or join a secure meeting with HD video, real-time chat,
-                screen sharing, participant visibility, and host controls.
-            </p>
-            <div class="feature-strip">
-                <span>HD video</span>
-                <span>Realtime chat</span>
-                <span>Screen sharing</span>
-                <span>Host controls</span>
+        <section class="lobby-card" aria-label="Meeting setup">
+            <div class="signed-in-user">
+                <span class="section-label">Signed in as</span>
+                <h3 id="signedInName"></h3>
+                <p id="signedInEmail"></p>
+                <br>
+                <button id="logoutBtn" class="btn btn-secondary btn-full">
+                    Logout
+                </button>
             </div>
-        </section>
-
-        <section
-                class="lobby-card"
-                aria-label="Meeting setup"
-        >
-            <div class="field-group">
-                <label for="userNameInput">Your name</label>
-                <input
-                        id="userNameInput"
-                        class="text-input"
-                        autocomplete="name"
-                        placeholder="Enter your name"
-                >
-            </div>
-
-            <button
-                    id="createRoomBtn"
-                    class="btn btn-primary btn-full"
-            >
+            <button id="createRoomBtn" class="btn btn-primary btn-full">
                 <span class="btn-icon">+</span>
                 Create meeting
             </button>
@@ -77,8 +54,8 @@
                     Join
                 </button>
             </div>
-
-            <div id="meetingInfoMount"></div>
+            <div class = "divider"><h3>Meeting History</h3></div>
+            <div class = "meeting-history-scroll"><div id="meetingHistoryMount"></div></div>
         </section>
     </main>
 </section>

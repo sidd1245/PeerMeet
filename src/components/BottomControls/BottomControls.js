@@ -37,15 +37,23 @@ export function createBottomControls() {
             <span>Leave</span>
         </button>
         <div id="hostControls" class="host-controls" style="display:none;">
-            <button id="muteAllBtn" class="control-btn warning">
-                <span class="control-icon">All</span>
-                <span>Mute all</span>
-            </button>
-            <button id="endMeetingBtn" class="control-btn danger solid">
-                <span class="control-icon">End</span>
-                <span>End meeting</span>
-            </button>
-        </div>
+
+        <button id="muteAllBtn" class="control-btn warning">
+        <span class="control-icon">All</span>
+        <span>Mute all</span>
+        </button>
+
+        <button id="lockRoomBtn" class="control-btn warning">
+        <span class="control-icon">🔒</span>
+        <span>Lock meeting</span>
+        </button>
+
+        <button id="endMeetingBtn" class="control-btn danger solid">
+        <span class="control-icon">End</span>
+        <span>End meeting</span>
+        </button>
+
+</div>
     `;
 
     const refs = {
@@ -59,6 +67,7 @@ export function createBottomControls() {
         leaveRoomBtn: element.querySelector("#leaveRoomBtn"),
         hostControls: element.querySelector("#hostControls"),
         muteAllBtn: element.querySelector("#muteAllBtn"),
+        lockRoomBtn: element.querySelector("#lockRoomBtn"),
         endMeetingBtn: element.querySelector("#endMeetingBtn")
     };
 
@@ -88,6 +97,11 @@ export function createBottomControls() {
         onOpenSettings: handler => refs.settingsBtn.addEventListener("click", handler),
         onLeave: handler => refs.leaveRoomBtn.addEventListener("click", handler),
         onMuteAll: handler => refs.muteAllBtn.addEventListener("click", handler),
+        setRoomLocked: locked => {
+            refs.lockRoomBtn.querySelector("span:last-child").textContent = locked ? "Unlock meeting" : "Lock meeting";
+            refs.lockRoomBtn.classList.toggle("is-active", locked);
+        },
+        onLockRoom: handler => refs.lockRoomBtn.addEventListener("click", handler),
         onEndMeeting: handler => refs.endMeetingBtn.addEventListener("click", handler)
     };
 

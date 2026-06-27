@@ -10,7 +10,8 @@ export function createAuthPage() {
         name: element.querySelector("#authNameInput"),
         email: element.querySelector("#authEmailInput"),
         signIn: element.querySelector("#signInBtn"),
-        guest: element.querySelector("#guestBtn")
+        password: element.querySelector("#authPasswordInput"),
+        register: element.querySelector("#registerBtn"),
     };
 
     return {
@@ -18,14 +19,7 @@ export function createAuthPage() {
         show: () => element.classList.remove("is-hidden"),
         hide: () => element.classList.add("is-hidden"),
         getProfile: () => ({
-            name: refs.name.value.trim(),
-            email: refs.email.value.trim(),
-            authType: "signed-in"
-        }),
-        getGuestProfile: () => ({
-            name: refs.name.value.trim() || "Guest",
-            email: "",
-            authType: "guest"
+            name: refs.name.value.trim(), email: refs.email.value.trim(), password: refs.password.value
         }),
         setName: name => {
             refs.name.value = name || "";
@@ -33,9 +27,14 @@ export function createAuthPage() {
         setEmail: email => {
             refs.email.value = email || "";
         },
+        clear: () => {
+            refs.name.value = "";
+            refs.email.value = "";
+            refs.password.value = "";
+        },
         focusName: () => refs.name.focus(),
         onSignIn: handler => refs.signIn.addEventListener("click", handler),
-        onGuest: handler => refs.guest.addEventListener("click", handler)
+        onRegister: handler => refs.register.addEventListener("click", handler)
     };
 
 }
