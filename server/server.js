@@ -12,16 +12,25 @@ dotenv.config();
 
 const app = express();
 
+const allowedOrigin =
+    process.env.CLIENT_URL || "http://localhost:5173";
+
+app.use(cors({
+    origin: allowedOrigin,
+    credentials: true
+}));
+
 app.use(express.json());
-app.use(cors());
 
 app.use("/api/auth", authRoutes);
 app.use("/api/meetings", meetingRoutes);
+
 const server = http.createServer(app);
 
 const io = new Server(server, {
     cors: {
-        origin: "*"
+        origin: allowedOrigin,
+        credentials: true
     }
 });
 
@@ -61,8 +70,10 @@ app.post("/api/livekit/token", async (req, res) => {
 
 });
 
-server.listen(3000, () => {
+const PORT = process.env.PORT || 3000;
 
-    console.log("Server running on port 3000");
+server.listen(PORT, () => {
+
+    console.log(`Server running on port ${PORT}`);
 
 });

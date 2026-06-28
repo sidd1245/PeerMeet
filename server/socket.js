@@ -133,40 +133,58 @@ export function setupSocket(io) {
             });
         });
 
-        socket.on("join-room", async ({roomId}) => {
-            if (isParticipant(roomId, socket.user.id)) {
-                return;
-            }
-            if (isRoomLocked(roomId)) {
+        socket.on("join-room", async ({ roomId }) => {
+            try {
+
+                if (isParticipant(roomId, socket.user.id)) {
+                    return;
+                }
+
+                if (isRoomLocked(roomId)) {
+                    socket.emit("join-denied", {
+                        reason: "Meeting is locked"
+                    });
+                    return;
+                }
+
+                const result = joinRoom(roomId, {
+                    socketId: socket.id,
+                    user: socket.user
+                });
+
+                const room = result.room;
+
+                if (result.created) {
+                    await createMeeting({
+                        roomId,
+                        hostId: socket.user.id
+                    });
+                }
+
+                socket.join(roomId);
+
+                await updateParticipantCount(
+                    roomId,
+                    room.participants.length
+                );
+
+                socket.emit("join-approved");
+
+                socket.to(roomId).emit("participant-joined", {
+                    user: socket.user
+                });
+
+                io.to(roomId).emit("room-updated", room);
+
+            } catch (err) {
+
+                console.error("JOIN ROOM ERROR:", err);
+
                 socket.emit("join-denied", {
-                    reason: "Meeting is locked"
-                });
-                return;
-            }
-            const result = joinRoom(roomId, {
-                socketId: socket.id, user: socket.user
-            });
-
-            const room = result.room;
-
-            if (result.created) {
-
-                await createMeeting({
-                    roomId, hostId: socket.user.id
+                    reason: "Server error"
                 });
 
             }
-
-            socket.join(roomId);
-            await updateParticipantCount(
-                roomId,
-                room.participants.length
-            );
-            socket.emit("join-approved");
-            socket.to(roomId).emit("participant-joined", {
-                user: socket.user,
-            });
-            io.to(roomId).emit("room-updated", room);
         });
 
         socket.on("end-meeting", async roomId => {
