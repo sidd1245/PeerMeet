@@ -14,6 +14,7 @@ import {
     showAvatar, hideAvatar, setMicMuted, setMicUnmuted,
     getOrCreatePresentationStage, removePresentationStage
 } from "../../components/VideoGrid/VideoGrid.js";
+import {serializers as response} from "livekit-client/src/index.ts";
 
 let room = null;
 let onScreenShareStopped = null;
