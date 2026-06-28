@@ -14,7 +14,6 @@ import {
     showAvatar, hideAvatar, setMicMuted, setMicUnmuted,
     getOrCreatePresentationStage, removePresentationStage
 } from "../../components/VideoGrid/VideoGrid.js";
-import {serializers as response} from "livekit-client/src/index.ts";
 
 let room = null;
 let onScreenShareStopped = null;
@@ -27,7 +26,7 @@ export async function connectRoom({
                                       roomName, identity, name, onReconnecting, onReconnected, onDisconnected
                                   }) {
 
-    await fetch(`${import.meta.env.VITE_API_URL}/api/livekit/token`, {
+    const response = await fetch(`${import.meta.env.VITE_API_URL}/api/livekit/token`, {
         method: "POST", headers: {
             "Content-Type": "application/json"
         }, body: JSON.stringify({
