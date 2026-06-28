@@ -12,11 +12,6 @@ dotenv.config();
 
 const app = express();
 
-app.use(express.json());
-
-
-const server = http.createServer(app);
-
 const allowedOrigin =
     process.env.CLIENT_URL || "http://localhost:5173";
 
@@ -24,8 +19,13 @@ app.use(cors({
     origin: allowedOrigin,
     credentials: true
 }));
+
+app.use(express.json());
+
 app.use("/api/auth", authRoutes);
 app.use("/api/meetings", meetingRoutes);
+
+const server = http.createServer(app);
 
 const io = new Server(server, {
     cors: {
